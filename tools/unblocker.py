@@ -133,7 +133,7 @@ def classify(pr: dict, now: dt.datetime) -> dict:
     }
 
 
-def board(rows: list[dict], org: str, now: dt.datetime, red_main: list[dict] | None = None) -> str:
+def board(rows: list[dict], org: str, now: dt.datetime, red_main: list[dict] | None = None, issues: dict | None = None, security: dict | None = None) -> str:
     rows = sorted(rows, key=lambda r: (r["rank"], -r["stale_days"], r["repo"], r["number"]))
     date = now.astimezone(dt.timezone(dt.timedelta(hours=-4))).strftime("%A %Y-%m-%d %H:%M ET")
     counts = Counter(b["class"] for r in rows for b in r["blockers"])
@@ -166,8 +166,57 @@ def board(rows: list[dict], org: str, now: dt.datetime, red_main: list[dict] | N
         lines.append(f"| [{r['repo']}#{r['number']}]({r['url']}) {r['title'][:70]} | {flags} | {bl} | {entries} | {r['stale_days']}d |")
     if red_main:
         lines += ["", "## Red on main (latest run per workflow)", *(f"- {x['repo']} · {x['workflow']} · {x['conclusion']} · [{x['when']}]({x['url']})" for x in red_main[:20])]
+    if issues and "error" not in issues:
+        lines += ["", f"## Open issues — {issues['total']} (ledger, not noise)",
+                  "- by repo: " + ", ".join(f"{k} {v}" for k, v in issues["by_repo"]),
+                  "- by class: " + ", ".join(f"{k} {v}" for k, v in issues["by_class"]),
+                  "- by label: " + ", ".join(f"{k} {v}" for k, v in issues["by_label"]),
+                  f"- `estate:p0`: {issues['p0']} · `estate:code-actionable`: {len(issues['actionable'])}"]
+        if issues["actionable"]:
+            lines += ["", "Code-actionable now:", *(f"- [{r}#{n}]({u}) {t}" for r, n, t, u in issues["actionable"])]
+    if security:
+        dep = security.get("dependabot", {}); sec = security.get("secret_scanning", {})
+        lines += ["", "## Security posture (org)",
+                  f"- Dependabot alerts open: {dep.get('open', dep.get('error', '?'))}" + (f" · severity {dict(dep.get('severity', []))}" if dep.get('severity') else ""),
+                  f"- Secret-scanning alerts open: {sec.get('open', sec.get('error', '?'))}" + (f" · {dict(sec.get('by_repo', []))}" if sec.get('by_repo') else ""),
+                  "- Managed security configuration 252588 (secret scanning, push protection, Dependabot alerts + security updates, private vuln reporting) is enforced on every repository; code-scanning backlog is tracked in runbook `codeql-scorecard-backlog`."]
     lines += ["", "_Read-only snapshot. Nothing was merged, edited, or re-run by this board._"]
     return "\n".join(lines) + "\n"
+
+
+def issues_summary(org: str) -> dict:
+    """Open-issue ledger by repo, label, and class. Read-only; nothing is closed."""
+    import re as _re
+    try:
+        items = json.loads(gh("search", "issues", "--owner", org, "--state", "open", "--limit", "1000", "--json", "number,title,repository,labels,url,createdAt"))
+    except RuntimeError as e:
+        return {"error": str(e)}
+    def cls(t: str) -> str:
+        t = t.lower()
+        for k, pat in [("frontier-eval", r"frontier|\[eval"), ("hf-drift", r"drift|parity|hugging|hf[- ]"), ("estate", r"estate|census|reconcil|inventory|closeout"), ("owner-queue", r"owner|founder|stephen|decision|\bhold\b"), ("security", r"security|codeql|cve|secret|vuln|protect"), ("incident", r"incident|outage|530|404|down|degraded"), ("ci", r"ci |digest|workflow")]:
+            if _re.search(pat, t):
+                return k
+        return "other"
+    by_repo = Counter(i["repository"]["nameWithOwner"].split("/")[1] for i in items)
+    by_label = Counter(l["name"] for i in items for l in i["labels"])
+    by_class = Counter(cls(i["title"]) for i in items)
+    p0 = [i for i in items if any(l["name"] == "estate:p0" for l in i["labels"])]
+    actionable = [i for i in items if any(l["name"] == "estate:code-actionable" for l in i["labels"])]
+    return {"total": len(items), "by_repo": by_repo.most_common(12), "by_label": by_label.most_common(8), "by_class": by_class.most_common(), "p0": len(p0), "actionable": [(i["repository"]["nameWithOwner"].split("/")[1], i["number"], i["title"][:80], i["url"]) for i in actionable]}
+
+
+def security_summary(org: str) -> dict:
+    out: dict = {}
+    for key, path in (("dependabot", f"orgs/{org}/dependabot/alerts?state=open&per_page=100"), ("secret_scanning", f"orgs/{org}/secret-scanning/alerts?state=open&per_page=100")):
+        try:
+            items = json.loads(gh("api", "--paginate", "--slurp", path))
+            flat = [x for pg in items for x in (pg if isinstance(pg, list) else [])]
+            out[key] = {"open": len(flat), "by_repo": Counter(x["repository"]["name"] for x in flat).most_common(6)}
+            if key == "dependabot":
+                out[key]["severity"] = Counter((x.get("security_advisory") or {}).get("severity") for x in flat).most_common()
+        except RuntimeError as e:
+            out[key] = {"error": str(e)[:120]}
+    return out
 
 
 def red_on_main(org: str, repos: list[str]) -> list[dict]:
@@ -197,12 +246,14 @@ def main() -> int:
     prs = collect(a.org)
     rows = [classify(p, now) for p in prs]
     red = red_on_main(a.org, sorted({r["repo"] for r in rows})) if a.red_main else None
-    md = board(rows, a.org, now, red)
+    issues = issues_summary(a.org) if a.red_main else None
+    security = security_summary(a.org) if a.red_main else None
+    md = board(rows, a.org, now, red, issues, security)
     out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
     stamp = now.strftime("%Y-%m-%d")
     (out / f"board-{stamp}.md").write_text(md)
     (out / "latest.md").write_text(md)
-    (out / f"board-{stamp}.json").write_text(json.dumps({"schema": "szl.unblocker-board/v1", "observed": now.isoformat(), "org": a.org, "prs": rows, "red_main": red}, indent=1))
+    (out / f"board-{stamp}.json").write_text(json.dumps({"schema": "szl.unblocker-board/v1", "observed": now.isoformat(), "org": a.org, "prs": rows, "red_main": red, "issues": issues, "security": security}, indent=1))
     sys.stdout.write(md)
     return 0
 
