@@ -1,15 +1,17 @@
 # SZL ops runbook — index
 
-33 entries · last verified 2026-10-01
+37 entries · last verified 2026-10-01
 
 | id | surface | severity | title |
 |---|---|---|---|
 | [`a11oy-parity-single-writer`](runbook/a11oy-parity-single-writer.md) | github | high | a11oy PRs fail 'Protected base matches immutable HF repository' / 'single-writer guard' / 'Shared source files in sync with killinchu' |
+| [`codeql-scorecard-backlog`](runbook/codeql-scorecard-backlog.md) | github | high | Code-scanning backlog: 467 open alerts across 18 repos, 240 are PinnedDependenciesID — the wave plan |
 | [`codeql-triage`](runbook/codeql-triage.md) | github | medium | CodeQL alerts — list, triage, and close with evidence |
 | [`dco-bot-prs`](runbook/dco-bot-prs.md) | github | low | DCO blocks a Dependabot or bot PR — solo-build policy, not an admin bypass |
 | [`deadman-census-red`](runbook/deadman-census-red.md) | github | medium | 'Estate dead-man supervisor' / 'Estate readiness evidence' red — census fails closed on completeness |
 | [`dependabot-updates-red`](runbook/dependabot-updates-red.md) | github | low | 'Dependabot Updates' workflow is red — read the updater error, fix the lockfile, or ignore the ecosystem |
 | [`org-profile-validators`](runbook/org-profile-validators.md) | github | high | szl-holdings org profile red on Tests / SZL Router flagship alignment / estate alignment — required blocks and word budgets |
+| [`org-rulesets-admin-org`](runbook/org-rulesets-admin-org.md) | github | high | Protect every default branch at once — org ruleset (needs admin:org; connector token cannot) |
 | [`pr-behind-main`](runbook/pr-behind-main.md) | github | medium | PR is BEHIND main — update the branch before anything else |
 | [`pr-conflicting`](runbook/pr-conflicting.md) | github | medium | PR is CONFLICTING (DIRTY) — rebase and resolve, or close as net-zero |
 | [`pr-control-plane-effect`](runbook/pr-control-plane-effect.md) | github | high | 'Static control-plane effect boundary' fails — workflow/script change outside the admitted grammar |
@@ -18,6 +20,7 @@
 | [`pr-provenance-headings`](runbook/pr-provenance-headings.md) | github | high | 'szl/provenance' fails — PR body is missing the seven policy headings |
 | [`red-workflows-scan`](runbook/red-workflows-scan.md) | github | medium | Which workflows are red on main right now, org-wide — the one-block scan |
 | [`secret-health-unavailable`](runbook/secret-health-unavailable.md) | github | low | secret-health reports UNAVAILABLE — qillqaq App permission, not a new PAT |
+| [`secret-scanning-false-positive-vendored`](runbook/secret-scanning-false-positive-vendored.md) | github | medium | Secret-scanning alert points into vendored site-packages (committed venv) — verify, then resolve as false positive |
 | [`security-gate-platform`](runbook/security-gate-platform.md) | github | high | 'Security Gate (blocking)' or 'Dependency Vulnerability Scan' red on platform — HIGH CVE in the pnpm tree |
 | [`hf-constellation-operator-repair-failed`](runbook/hf-constellation-operator-repair-failed.md) | huggingface | medium | 'HF Living Constellation Operator' red: 'One or more public Spaces were not proven operational' |
 | [`hf-deploy-400-401-token`](runbook/hf-deploy-400-401-token.md) | huggingface | high | HF Space/dataset deploy fails 400 Bad Request or 401 — HF_TOKEN missing or rotated |
@@ -31,6 +34,7 @@
 | [`cf-token-verify-and-dns-audit`](runbook/cf-token-verify-and-dns-audit.md) | domains | medium | Verify a Cloudflare token and dump both zones' DNS — before any write |
 | [`estate-probe`](runbook/estate-probe.md) | domains | low | Probe every public surface in one pass — the expected codes |
 | [`gh-pages-custom-domain`](runbook/gh-pages-custom-domain.md) | domains | medium | GitHub Pages site (a11oy.net, dev.a-11-oy.com) not serving or wrong cert — CNAME file + DNS + Pages config |
+| [`showcase-custom-domain`](runbook/showcase-custom-domain.md) | domains | medium | showcase.a-11-oy.com — GitHub Pages for szl-showcase needs one Cloudflare CNAME (connector token broken) |
 | [`cf-tunnel-530`](runbook/cf-tunnel-530.md) | own-metal | high | gpu / gateway / meter / meter2 .a-11-oy.com return 530 (error 1033) — cloudflared is down on the box |
 | [`own-metal-services`](runbook/own-metal-services.md) | own-metal | medium | Ollama / joule exporter / LiteLLM down behind a live tunnel (502/503/404) — restart the local stack |
 | [`model-gates-not-promotable`](runbook/model-gates-not-promotable.md) | models | medium | szl-typesafe-triage: receipt verification red, 11 of 12 gates — publish evidence, do not promote |

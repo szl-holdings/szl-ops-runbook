@@ -322,3 +322,109 @@ gh api orgs/szl-holdings/installations --jq '.installations[]|{app_slug,permissi
     notes="UNAVAILABLE means 'could not read authoritatively'; it is never relabeled MISSING. Name presence does not prove a token is valid (see hf-deploy-400-401-token).",
     sources=["https://github.com/szl-holdings/szl-doctrine/blob/main/FOUNDER_SECRETS_RUNBOOK.md"],
 )
+
+add(
+    id="secret-scanning-false-positive-vendored",
+    title="Secret-scanning alert points into vendored site-packages (committed venv) — verify, then resolve as false positive",
+    tags=["security", "secret-scanning", "szl-forge", "venv", "false-positive"],
+    surface="github",
+    severity="medium",
+    symptom="Secret scanning reports e.g. a 'Mistral AI API Key' in `.venv-chaski-r3-gpu/Lib/site-packages/transformers/...` (szl-forge alert #2, 2026-09-18). The 'secret' is a pattern match inside library source from a virtualenv that was committed once; validity shows `inactive`; the path is absent from HEAD.",
+    diagnose=r'''$Repo = "szl-holdings/szl-forge"; $N = 2
+gh api "repos/$Repo/secret-scanning/alerts/$N" --jq '{state,validity,publicly_leaked,push_protection_bypassed,secret_type_display_name,html_url}'
+gh api "repos/$Repo/secret-scanning/alerts/$N/locations" --jq '.[]|{type,path:.details.path,line:.details.start_line,commit:.details.commit_sha[0:10]}'
+# Is the path still in HEAD? (404 = gone)
+gh api "repos/$Repo/contents/.venv-chaski-r3-gpu" --jq 'if type=="array" then "PRESENT" else .message end' ''',
+    fix=r'''# Only after the three facts above agree (validity inactive, path is library source, path absent from HEAD):
+gh api -X PATCH "repos/$Repo/secret-scanning/alerts/$N" -f state=resolved -f resolution=false_positive -f resolution_comment="Pattern match inside vendored transformers source in a since-removed committed venv (commit 7dfba5d8); validity inactive; path absent from HEAD."
+# If validity were 'active' or the match were in YOUR code: rotate the key at the provider FIRST, then resolve as 'revoked'.
+# Keep venvs out of the tree for good (.gitignore already has .venv-ra-v2/, .venv-ra-v3/, khipu/.venv/):
+Add-Content -LiteralPath .gitignore -Value ".venv*/" ''',
+    verify=r'''gh api "repos/$Repo/secret-scanning/alerts?state=open" --jq 'length' ''',
+    notes="This closure is a security decision; the audit agent prepares the evidence and the owner clicks. Org-wide at 2026-10-01 02:15Z: 1 open secret-scanning alert (this one), 1 open Dependabot alert (platform, npm, low). Push protection and secret scanning are enforced on every repo by managed configuration 252588.",
+    sources=["https://github.com/szl-holdings/szl-forge/security/secret-scanning/2"],
+)
+
+add(
+    id="codeql-scorecard-backlog",
+    title="Code-scanning backlog: 467 open alerts across 18 repos, 240 are PinnedDependenciesID — the wave plan",
+    tags=["security", "codeql", "scorecard", "pinned-dependencies", "token-permissions", "ssrf", "dangerous-workflow"],
+    surface="github",
+    severity="high",
+    symptom="Per-repo code-scanning counts at 2026-10-01: a11oy 100+ (list truncated), szl-forge 83, david-leads 76, killinchu 50, .github 50, vertical-services 38, immune 27, anatomy 22, szl-router 20. By rule: PinnedDependenciesID 240, TokenPermissionsID 40, py/empty-except 29, py/stack-trace-exposure 12, py/incomplete-url-substring-sanitization 8. Critical (7): DangerousWorkflowID in .github estate-one-fabric-alignment.yml (2), david-leads frontier-live-canary.yml (1), szl-router hf-space-drift-check.yml (1); py/partial-ssrf in david-leads app/signals.py:34, vertical-services services/finance/feed.py:35 and deploy/szl_verticals/connector_transport.py:27.",
+    diagnose=r'''foreach ($r in "a11oy","szl-forge","david-leads","killinchu",".github","vertical-services","immune","szl-router") {
+  $items = gh api --paginate --slurp "repos/szl-holdings/$r/code-scanning/alerts?state=open&per_page=100" 2>$null | ConvertFrom-Json | ForEach-Object { $_ }
+  $byRule = $items | Group-Object { $_.rule.id } | Sort-Object Count -Descending | Select-Object -First 5 | ForEach-Object { "$($_.Name)=$($_.Count)" }
+  "{0,-18} open={1,-4} {2}" -f $r, @($items).Count, ($byRule -join " ")
+}''',
+    fix=r'''# Wave order (highest risk first, each its own PR per repo, body with the seven provenance headings):
+# 1. DangerousWorkflowID (critical): never run checked-out PR/workflow_run head code in a privileged context.
+#    Pattern: checkout the TRUSTED base for scripts, pass untrusted head SHA only as data; or split into an unprivileged
+#    pull_request job + a workflow_run job that only reads artifacts. Then dismiss remaining as 'used in tests' only with evidence.
+# 2. py/partial-ssrf (critical): build outbound URLs from an allowlisted host table, never from request input; reject
+#    anything not in the allowlist before the HTTP call (david-leads signals.py:34, vertical-services feed.py:35, connector_transport.py:27).
+# 3. py/stack-trace-exposure (12): return a generic error body; log the traceback server-side with a correlation id.
+# 4. TokenPermissionsID (40): top-level `permissions: {}` or `contents: read` in every workflow; grant per job.
+# 5. PinnedDependenciesID (240): pin Docker base images by digest, pip installs with --require-hashes (pip-compile --generate-hashes),
+#    GitHub Actions by 40-hex SHA (org rule already). Do it repo by repo; szl-forge (75) and .github (31) first.
+# 6. Hygiene (py/empty-except 29, unused imports): ruff --fix in a dedicated PR per repo.''',
+    verify=r'''gh api "repos/szl-holdings/<repo>/code-scanning/alerts?state=open&per_page=1" --jq 'length' ''',
+    notes="Scorecard findings (PinnedDependenciesID, TokenPermissionsID, FuzzingID, CIIBestPracticesID, CodeReviewID, MaintainedID) are posture probes, not exploitable bugs; the CodeQL py/* and DangerousWorkflowID findings are the ones that can hurt. Do not bulk-dismiss to make a number go green. Org-level code-scanning listing needs a security-manager token (401 at 2026-10-01); per-repo listing works.",
+    sources=["https://github.com/szl-holdings/.github/security/code-scanning/263", "https://github.com/szl-holdings/david-leads/security/code-scanning/7", "https://github.com/szl-holdings/vertical-services/security/code-scanning/20"],
+)
+
+add(
+    id="org-rulesets-admin-org",
+    title="Protect every default branch at once — org ruleset (needs admin:org; connector token cannot)",
+    tags=["github", "org", "rulesets", "branch-protection", "admin", "enterprise"],
+    surface="github",
+    severity="high",
+    symptom="szl-org-health#176 found 52 of 97 active repositories without protected default branches; `.github#649` asks for exact-head gates on core mains. The connected automation token lacks `admin:org`, so `GET /orgs/szl-holdings/rulesets` returns 404 and org rulesets cannot be created by agents.",
+    diagnose=r'''gh auth status 2>&1 | Select-String "Token scopes"
+gh api orgs/szl-holdings/rulesets 2>&1 | Select-Object -First 3''',
+    fix=r'''# Owner console (your own login, admin:org). Ruleset 1 is zero-risk: no deletes, no force-pushes on any default branch.
+gh auth refresh -h github.com -s admin:org,repo,workflow
+$Rules = @'
+{ "name": "szl-default-branch-integrity", "target": "branch", "enforcement": "active",
+  "conditions": { "ref_name": { "include": ["~DEFAULT_BRANCH"], "exclude": [] },
+                  "repository_name": { "include": ["~ALL"], "exclude": [], "protected": false } },
+  "rules": [ { "type": "deletion" }, { "type": "non_fast_forward" } ],
+  "bypass_actors": [ { "actor_id": 1, "actor_type": "OrganizationAdmin", "bypass_mode": "always" } ] }
+'@
+$Rules | gh api -X POST orgs/szl-holdings/rulesets --input -
+# Ruleset 2 (flagships only): PRs required before merge on main; apps keep their lanes via bypass if needed.
+$Flag = @'
+{ "name": "szl-flagship-pr-required", "target": "branch", "enforcement": "active",
+  "conditions": { "ref_name": { "include": ["~DEFAULT_BRANCH"], "exclude": [] },
+                  "repository_name": { "include": ["a11oy","killinchu","platform",".github","szl-router","david-leads","szl-substrate","szl-forge"], "exclude": [], "protected": false } },
+  "rules": [ { "type": "pull_request", "parameters": { "required_approving_review_count": 0, "dismiss_stale_reviews_on_push": false, "require_code_owner_review": false, "require_last_push_approval": false, "required_review_thread_resolution": false } } ],
+  "bypass_actors": [ { "actor_id": 1, "actor_type": "OrganizationAdmin", "bypass_mode": "pull_request" } ] }
+'@
+$Flag | gh api -X POST orgs/szl-holdings/rulesets --input -''',
+    verify=r'''gh api orgs/szl-holdings/rulesets --jq '.[]|"\(.id) \(.name) \(.enforcement)"'
+gh api repos/szl-holdings/szl-pin/rules/branches/main --jq '.[].type' ''',
+    notes="Org rulesets apply to repos the moment they are created (`~ALL`), which is how 52 repos get protected in one call and stay protected. Do not set required status checks org-wide: repos without those checks would never merge again. Enterprise plan, 3 seats, 2FA required, members cannot create public repos — confirmed 2026-10-01.",
+    sources=["https://github.com/szl-holdings/szl-org-health/issues/176", "https://github.com/szl-holdings/.github/issues/649"],
+)
+
+add(
+    id="showcase-custom-domain",
+    title="showcase.a-11-oy.com — GitHub Pages for szl-showcase needs one Cloudflare CNAME (connector token broken)",
+    tags=["showcase", "github-pages", "cloudflare", "dns", "a-11-oy.com"],
+    surface="domains",
+    severity="medium",
+    symptom="Repo szl-holdings/szl-showcase is public with Pages enabled (source main:/), CNAME file and Pages custom domain set to showcase.a-11-oy.com, but DNS has no record yet; the Cloudflare connector fails auth (code 9106), so the record must be created from the owner console. Until then the page is live at https://szl-showcase.pplx.app.",
+    diagnose=r'''gh api repos/szl-holdings/szl-showcase/pages --jq '{status,cname,https_enforced,protected_domain_state}'
+Resolve-DnsName showcase.a-11-oy.com -Type CNAME -ErrorAction SilentlyContinue | Select-Object NameHost''',
+    fix=r'''$Tok = Read-Host -AsSecureString "Cloudflare API token (Zone:DNS:Edit on a-11-oy.com)"
+$H = @{ Authorization = "Bearer " + [Runtime.InteropServices.Marshal]::PtrToStringBSTR([Runtime.InteropServices.Marshal]::SecureStringToBSTR($Tok)); "Content-Type" = "application/json" }
+$Zone = "27911fb3d5ed874fdd4e844ed7f5e248"
+$Body = '{"type":"CNAME","name":"showcase","content":"szl-holdings.github.io","ttl":1,"proxied":false}'
+Invoke-RestMethod -Method Post -Headers $H -Body $Body "https://api.cloudflare.com/client/v4/zones/$Zone/dns_records" | Select-Object -ExpandProperty result | Select-Object name, content, proxied
+Remove-Variable Tok, H
+# After GitHub provisions the certificate (minutes to an hour):
+gh api -X PUT repos/szl-holdings/szl-showcase/pages -F https_enforced=true''',
+    verify=r'''(Invoke-WebRequest -UseBasicParsing https://showcase.a-11-oy.com/ -TimeoutSec 20).StatusCode''',
+    notes="DNS-only (grey cloud) is required while GitHub issues the certificate; it can be proxied afterwards if you want Cloudflare headers, but holdings.a-11-oy.com already works grey. Decide later whether holdings.a-11-oy.com (the older landing) redirects to showcase or the reverse — two landings is a duplicate surface under doctrine.",
+    sources=["https://github.com/szl-holdings/szl-showcase"],
+)
