@@ -1,5 +1,5 @@
 {
- "built": "2026-10-01T02:22:41Z",
+ "built": "2026-10-01T03:50:30Z",
  "entries": [
   {
    "diagnose": "$Repo = \"szl-holdings/a11oy\"; $Pr = 2373\ngh pr view $Pr --repo $Repo --json number,isDraft,mergeable,mergeStateStatus,headRefName,baseRefName |\n  ConvertFrom-Json | Format-List",
@@ -265,7 +265,7 @@
    "fix": "# 1. Mint ONE fine-grained HF token (write to the SZLHOLDINGS org repos that CI publishes). Store it once, org-wide:\n#    (paste happens in the secure prompt; the value never lands in history)\n$Tok = Read-Host -AsSecureString \"Paste new HF write token\"\n$Plain = [Runtime.InteropServices.Marshal]::PtrToStringBSTR([Runtime.InteropServices.Marshal]::SecureStringToBSTR($Tok))\n$Plain | gh secret set HF_TOKEN --org szl-holdings --visibility all\n# Repos that use a differently named secret keep working only if you set that name too:\n$Plain | gh secret set HF_ORG_TOKEN --org szl-holdings --visibility all\n# david-leads reader (read-only, dataset-scoped token) is an ENVIRONMENT secret:\n$Rd = Read-Host -AsSecureString \"Paste DAVID_DATASET_READ_TOKEN (read-only)\"\n[Runtime.InteropServices.Marshal]::PtrToStringBSTR([Runtime.InteropServices.Marshal]::SecureStringToBSTR($Rd)) | gh secret set DAVID_DATASET_READ_TOKEN --repo szl-holdings/david-leads --env david-space-ci\nRemove-Variable Plain, Tok, Rd\n# 2. Re-run the failed lanes\ngh run rerun (gh run list --repo szl-holdings/yarqa --workflow \"HF Space deploy\" --limit 1 --json databaseId --jq '.[0].databaseId') --repo szl-holdings/yarqa --failed\ngh run rerun (gh run list --repo szl-holdings/szl-gpu-bridge --workflow \"Sync training-receipts card\" --limit 1 --json databaseId --jq '.[0].databaseId') --repo szl-holdings/szl-gpu-bridge --failed",
    "id": "hf-deploy-400-401-token",
    "last_verified": "2026-10-01",
-   "notes": "A 400 from `/tree/main?recursive=true` with huggingface_hub almost always means the request went out with an empty or invalid Authorization header, not a malformed path. Secret health in `.github` (secret-health.yml) reports PRESENT/MISSING/UNAVAILABLE by name; it cannot tell you a present token is dead \u2014 only a whoami or a rerun can.",
+   "notes": "A 400 from `/tree/main?recursive=true` with huggingface_hub almost always means the request went out with an empty or invalid Authorization header, not a malformed path. PRECEDENCE TRAP (confirmed 2026-10-01): repository-level secrets shadow organization-level secrets of the same name. 43 repos carried repo-level HF_TOKEN / HF_ORG_TOKEN / HF_ORG_TOKEN1 / HF_WRITE_TOKEN / HUGGINGFACE_TOKEN / HUGGING_FACE_HUB_TOKEN set before the rotation, so setting the org secret alone changed nothing for them; remove the repo-level copies (OWNER-ONLY.ps1 part 2) or re-set each. Secret health reports PRESENT/MISSING/UNAVAILABLE by name; it cannot tell you a present token is dead \u2014 only a whoami or a rerun can.",
    "severity": "high",
    "sources": [
     "https://github.com/szl-holdings/yarqa/actions/runs/36777783270",

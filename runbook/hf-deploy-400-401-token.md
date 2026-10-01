@@ -48,7 +48,7 @@ Invoke-WebRequest -UseBasicParsing -Method Head https://szlholdings-yarqa.hf.spa
 ```
 
 ## Notes
-A 400 from `/tree/main?recursive=true` with huggingface_hub almost always means the request went out with an empty or invalid Authorization header, not a malformed path. Secret health in `.github` (secret-health.yml) reports PRESENT/MISSING/UNAVAILABLE by name; it cannot tell you a present token is dead — only a whoami or a rerun can.
+A 400 from `/tree/main?recursive=true` with huggingface_hub almost always means the request went out with an empty or invalid Authorization header, not a malformed path. PRECEDENCE TRAP (confirmed 2026-10-01): repository-level secrets shadow organization-level secrets of the same name. 43 repos carried repo-level HF_TOKEN / HF_ORG_TOKEN / HF_ORG_TOKEN1 / HF_WRITE_TOKEN / HUGGINGFACE_TOKEN / HUGGING_FACE_HUB_TOKEN set before the rotation, so setting the org secret alone changed nothing for them; remove the repo-level copies (OWNER-ONLY.ps1 part 2) or re-set each. Secret health reports PRESENT/MISSING/UNAVAILABLE by name; it cannot tell you a present token is dead — only a whoami or a rerun can.
 
 ## Sources
 - https://github.com/szl-holdings/yarqa/actions/runs/36777783270
