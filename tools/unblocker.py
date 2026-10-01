@@ -110,8 +110,11 @@ def classify(pr: dict, now: dt.datetime) -> dict:
     if pr["isDraft"] and not hold:
         add("DRAFT_GATE", "pr-exact-head-provenance", "Draft PRs fail the exact-head provenance gate by design; mark ready when it should merge.")
     body = pr.get("body") or ""
-    missing_headings = [h for h in ("Origin", "Rights", "Agents and tools", "Tests", "Security", "Rollback", "Known limits") if not __import__("re").search(r"(?m)^#+\s*" + __import__("re").escape(h), body)]
-    if missing_headings and not any(b["class"] == "PROVENANCE_BODY" for b in blockers):
+    missing_headings = [h for h in ("Origin", "Rights", "Agents and tools", "Tests", "Security", "Rollback", "Known limits") if not __import__("re").search(r"(?m)^##\s+" + __import__("re").escape(h) + r"\s*$", body)]
+    # The szl/provenance check only runs where the solo-provenance workflow exists (the .github repo) or where the
+    # rollup carries it. Elsewhere, missing headings are advisory and must not be reported as a blocker.
+    provenance_enforced = pr["repo"].endswith("/.github") or any((c.get("name") or c.get("context") or "") == "szl/provenance" for c in checks)
+    if missing_headings and provenance_enforced and not any(b["class"] == "PROVENANCE_BODY" for b in blockers):
         add("PROVENANCE_BODY", "pr-provenance-headings", f"PR body missing headings: {', '.join(missing_headings)}.")
     updated = dt.datetime.fromisoformat(pr["updatedAt"].replace("Z", "+00:00"))
     stale_days = (now - updated).days
