@@ -1,109 +1,107 @@
-# Unblocker board — szl-holdings — Wednesday 2026-09-30 22:24 ET
+# Unblocker board — szl-holdings — Friday 2026-10-02 07:32 ET
 
-53 open PRs · 26 ready to merge · 0 on HOLD · blockers: READY 26, TESTS_RED 10, BEHIND 9, DRAFT_GATE 5, HF_PARITY 3
+48 open PRs · 8 ready to merge · 1 on HOLD · blockers: BEHIND 17, DRAFT_GATE 15, CONFLICTING 9, READY 8, SECURITY_GATE 3, TESTS_RED 3, CP_EFFECT 2, PROVENANCE_BODY 2, HF_PARITY 1, HOLD 1, FRONT_DOOR 1
 
 ## Top fixes before you start coding
-- **BEHIND** unblocks 9 PR(s): gh pr update-branch --rebase, then re-check provenance. → runbook `pr-behind-main`  
-  a11oy#2318, a11oy#2360, platform#601, szl-forge#464, szl-frontier#212, szl-invariants#29, szl-kernels#46, szl-openshell-receipts#6, szl-typesafe-triage#34
-- **TESTS_RED** unblocks 9 PR(s): Open the failing step log. → runbook `red-workflows-scan`  
-  platform#601, szl-forge#295, .github#823, lyte-services#32, platform#869, szl-energy-attest#50, szl-estate-os#58, szl-org-health#214, szl-safe-stack#22
-- **DRAFT_GATE** unblocks 5 PR(s): Draft PRs fail the exact-head provenance gate by design; mark ready when it should merge. → runbook `pr-exact-head-provenance`  
-  a11oy#2318, a11oy#2360, platform#601, immune#155, szl-forge#295
-- **HF_PARITY** unblocks 3 PR(s): Update the branch to the live main head. → runbook `a11oy-parity-single-writer`  
-  a11oy#2318, a11oy#2360, a11oy#2402
-- **TESTS_RED** unblocks 1 PR(s): Squash to one conventional commit when merging; rebase if the branch is stale. → runbook `pr-conflicting`  
-  platform#601
+- **BEHIND** unblocks 17 PR(s): gh pr update-branch --rebase, then re-check provenance. → runbook `pr-behind-main`  
+  a11oy#2411, a11oy#2414, a11oy#2415, a11oy#2416, a11oy#2422, a11oy#2427, a11oy#2435, a11oy#2436, a11oy#2441, szl-estate-os#63, szl-forge#484, szl-forge#491, szl-forge#500, szl-frontier#214, szl-kernels#47, szl-typesafe-triage#44, szl-typesafe-triage#50
+- **DRAFT_GATE** unblocks 15 PR(s): Draft PRs fail the exact-head provenance gate by design; mark ready when it should merge. → runbook `pr-exact-head-provenance`  
+  szl-estate-os#63, .github#831, .github#833, david-leads#139, governed-receipt-spec#31, immune#159, platform#876, platform#877, platform#878, szl-org-health#218, szl-skills#19, szl-skills#21, szl-skills#30, szl-skills#35, szl-skills#36
+- **CONFLICTING** unblocks 9 PR(s): Rebase onto main and resolve, or close as net-zero with a receipt comment. → runbook `pr-conflicting`  
+  szl-org-health#218, szl-skills#19, szl-skills#21, szl-skills#35, a11oy#2413, a11oy#2429, szl-skills#22, szl-skills#28, szl-skills#32
+- **SECURITY_GATE** unblocks 3 PR(s): Clear HIGH CVEs with root pnpm overrides. → runbook `security-gate-platform`  
+  platform#876, platform#877, platform#878
+- **TESTS_RED** unblocks 3 PR(s): Open the failing step log. → runbook `red-workflows-scan`  
+  szl-org-health#218, szl-skills#19, a11oy#2429
+- **PROVENANCE_BODY** unblocks 2 PR(s): Add the seven policy headings to the PR body (template in templates/pr-body.md). → runbook `pr-provenance-headings`  
+  .github#833, .github#830
 
 ## Ready to merge (squash)
-- [a11oy-factory#53](https://github.com/szl-holdings/a11oy-factory/pull/53) chore(pypi): canonical Trusted-Publishing release path v2 · +359/-0 · 3 files
-- [ayllu#47](https://github.com/szl-holdings/ayllu/pull/47) chore(pypi): mark non-distributable pyproject files Private :: Do Not Upload · +1/-0 · 1 files
-- [khipu-x1#11](https://github.com/szl-holdings/khipu-x1/pull/11) chore(pypi): canonical Trusted-Publishing release path v2 · +317/-32 · 3 files
-- [puriq-live#23](https://github.com/szl-holdings/puriq-live/pull/23) chore(pypi): mark non-distributable pyproject files Private :: Do Not Upload · +1/-0 · 1 files
-- [szl-block-kv#23](https://github.com/szl-holdings/szl-block-kv/pull/23) chore(pypi): mark non-distributable pyproject files Private :: Do Not Upload · +1/-0 · 1 files
-- [szl-blocked#18](https://github.com/szl-holdings/szl-blocked/pull/18) chore(pypi): mark non-distributable pyproject files Private :: Do Not Upload · +1/-0 · 1 files
-- [szl-calibration#11](https://github.com/szl-holdings/szl-calibration/pull/11) chore(pypi): canonical Trusted-Publishing release path v2 · +317/-32 · 3 files
-- [szl-ci-witness#11](https://github.com/szl-holdings/szl-ci-witness/pull/11) chore(pypi): canonical Trusted-Publishing release path v2 · +317/-32 · 3 files
-- [szl-crosscheck#12](https://github.com/szl-holdings/szl-crosscheck/pull/12) chore(pypi): canonical Trusted-Publishing release path v2 · +317/-32 · 3 files
-- [szl-eclipse#9](https://github.com/szl-holdings/szl-eclipse/pull/9) chore(pypi): canonical Trusted-Publishing release path v2 · +317/-32 · 3 files
-- [szl-engine-bench#11](https://github.com/szl-holdings/szl-engine-bench/pull/11) chore(pypi): canonical Trusted-Publishing release path v2 · +317/-32 · 3 files
-- [szl-evidence-litellm#5](https://github.com/szl-holdings/szl-evidence-litellm/pull/5) chore(pypi): canonical Trusted-Publishing release path v2 · +343/-62 · 4 files
-- [szl-evidence-mandate#2](https://github.com/szl-holdings/szl-evidence-mandate/pull/2) chore(pypi): canonical Trusted-Publishing release path v2 · +317/-32 · 3 files
-- [szl-formulas#16](https://github.com/szl-holdings/szl-formulas/pull/16) chore(pypi): mark non-distributable pyproject files Private :: Do Not Upload · +1/-0 · 1 files
-- [szl-govsign#13](https://github.com/szl-holdings/szl-govsign/pull/13) chore(pypi): mark non-distributable pyproject files Private :: Do Not Upload · +1/-0 · 1 files
-- [szl-guardrail-receipt#6](https://github.com/szl-holdings/szl-guardrail-receipt/pull/6) chore(pypi): canonical Trusted-Publishing release path v2 · +313/-32 · 3 files
-- [szl-khipu#82](https://github.com/szl-holdings/szl-khipu/pull/82) chore(pypi): canonical Trusted-Publishing release path v2 · +355/-0 · 4 files
-- [szl-nemo#14](https://github.com/szl-holdings/szl-nemo/pull/14) chore(pypi): canonical Trusted-Publishing release path v2 · +317/-32 · 3 files
-- [szl-ouroboros#33](https://github.com/szl-holdings/szl-ouroboros/pull/33) chore(pypi): canonical Trusted-Publishing release path v2 · +359/-0 · 3 files
-- [szl-pin#8](https://github.com/szl-holdings/szl-pin/pull/8) chore(pypi): canonical Trusted-Publishing release path v2 · +317/-32 · 3 files
-- [szl-platform#17](https://github.com/szl-holdings/szl-platform/pull/17) chore(pypi): mark non-distributable pyproject files Private :: Do Not Upload · +11/-0 · 11 files
-- [szl-provctl#12](https://github.com/szl-holdings/szl-provctl/pull/12) chore(pypi): mark non-distributable pyproject files Private :: Do Not Upload · +1/-0 · 1 files
-- [szl-v14#4](https://github.com/szl-holdings/szl-v14/pull/4) chore(pypi): mark non-distributable pyproject files Private :: Do Not Upload · +1/-0 · 1 files
-- [szl-vertical-forge#10](https://github.com/szl-holdings/szl-vertical-forge/pull/10) chore(pypi): canonical Trusted-Publishing release path v2 · +359/-0 · 3 files
-- [szl-wave1-report#8](https://github.com/szl-holdings/szl-wave1-report/pull/8) chore(pypi): canonical Trusted-Publishing release path v2 · +359/-0 · 3 files
-- [vsp-otel#136](https://github.com/szl-holdings/vsp-otel/pull/136) chore(pypi): canonical Trusted-Publishing release path v2 · +315/-32 · 3 files
+- [immune#157](https://github.com/szl-holdings/immune/pull/157) fix(immune): distinguish empty and corrupt receipt ledgers · +69/-10 · 4 files
+- [immune#158](https://github.com/szl-holdings/immune/pull/158) fix(immune): preserve corrupt state and distinguish empty ledgers · +120/-8 · 4 files
+- [szl-evidence-mandate#6](https://github.com/szl-holdings/szl-evidence-mandate/pull/6) Make signed evidence receipts schema-conformant and enforceable · +107/-8 · 8 files
+- [szl-lambda-gate#64](https://github.com/szl-holdings/szl-lambda-gate/pull/64) fix(hf): check named Hub tag without listing gated refs · +59/-5 · 2 files
+- [szl-skills#27](https://github.com/szl-holdings/szl-skills/pull/27) fix(science): fail closed on ambiguous skill identities · +156/-17 · 4 files
+- [szl-skills#33](https://github.com/szl-holdings/szl-skills/pull/33) feat(science): pilot exact range propagation · +618/-0 · 8 files
+- [szl-skills#34](https://github.com/szl-holdings/szl-skills/pull/34) test(science): pilot offline package-to-result continuity · +592/-0 · 4 files
+- [szl-typesafe-triage#52](https://github.com/szl-holdings/szl-typesafe-triage/pull/52) fix(triage): publish canonical cards with immutable readback · +1000/-63 · 4 files
 
 ## Every open PR, ranked by the cheapest unblock
 
 | PR | state | blocker → fix | runbook | stale |
 |---|---|---|---|---|
-| [a11oy-factory#53](https://github.com/szl-holdings/a11oy-factory/pull/53) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [ayllu#47](https://github.com/szl-holdings/ayllu/pull/47) chore(pypi): mark non-distributable pyproject files Private :: Do Not  | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [khipu-x1#11](https://github.com/szl-holdings/khipu-x1/pull/11) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [puriq-live#23](https://github.com/szl-holdings/puriq-live/pull/23) chore(pypi): mark non-distributable pyproject files Private :: Do Not  | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [szl-block-kv#23](https://github.com/szl-holdings/szl-block-kv/pull/23) chore(pypi): mark non-distributable pyproject files Private :: Do Not  | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [szl-blocked#18](https://github.com/szl-holdings/szl-blocked/pull/18) chore(pypi): mark non-distributable pyproject files Private :: Do Not  | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [szl-calibration#11](https://github.com/szl-holdings/szl-calibration/pull/11) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [szl-ci-witness#11](https://github.com/szl-holdings/szl-ci-witness/pull/11) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [szl-crosscheck#12](https://github.com/szl-holdings/szl-crosscheck/pull/12) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [szl-eclipse#9](https://github.com/szl-holdings/szl-eclipse/pull/9) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [szl-engine-bench#11](https://github.com/szl-holdings/szl-engine-bench/pull/11) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [szl-evidence-litellm#5](https://github.com/szl-holdings/szl-evidence-litellm/pull/5) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [szl-evidence-mandate#2](https://github.com/szl-holdings/szl-evidence-mandate/pull/2) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [szl-formulas#16](https://github.com/szl-holdings/szl-formulas/pull/16) chore(pypi): mark non-distributable pyproject files Private :: Do Not  | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [szl-govsign#13](https://github.com/szl-holdings/szl-govsign/pull/13) chore(pypi): mark non-distributable pyproject files Private :: Do Not  | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [szl-guardrail-receipt#6](https://github.com/szl-holdings/szl-guardrail-receipt/pull/6) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [szl-khipu#82](https://github.com/szl-holdings/szl-khipu/pull/82) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [szl-nemo#14](https://github.com/szl-holdings/szl-nemo/pull/14) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [szl-ouroboros#33](https://github.com/szl-holdings/szl-ouroboros/pull/33) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [szl-pin#8](https://github.com/szl-holdings/szl-pin/pull/8) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [szl-platform#17](https://github.com/szl-holdings/szl-platform/pull/17) chore(pypi): mark non-distributable pyproject files Private :: Do Not  | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [szl-provctl#12](https://github.com/szl-holdings/szl-provctl/pull/12) chore(pypi): mark non-distributable pyproject files Private :: Do Not  | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [szl-v14#4](https://github.com/szl-holdings/szl-v14/pull/4) chore(pypi): mark non-distributable pyproject files Private :: Do Not  | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [szl-vertical-forge#10](https://github.com/szl-holdings/szl-vertical-forge/pull/10) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [szl-wave1-report#8](https://github.com/szl-holdings/szl-wave1-report/pull/8) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [vsp-otel#136](https://github.com/szl-holdings/vsp-otel/pull/136) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
-| [a11oy#2318](https://github.com/szl-holdings/a11oy/pull/2318) feat(brand): adopt SZL Kanchay design system — docs site | DRAFT MERGEABLE/BEHIND | BEHIND; HF_PARITY (Protected base matches immutable HF repository); DRAFT_GATE | `a11oy-parity-single-writer`, `pr-behind-main`, `pr-exact-head-provenance` | 0d |
-| [a11oy#2360](https://github.com/szl-holdings/a11oy/pull/2360) fix(ui): keep console reads passive and mobile evidence accessible | DRAFT MERGEABLE/BEHIND | BEHIND; HF_PARITY (Protected base matches immutable HF repository); DRAFT_GATE | `a11oy-parity-single-writer`, `pr-behind-main`, `pr-exact-head-provenance` | 0d |
-| [platform#601](https://github.com/szl-holdings/platform/pull/601) feat(a11oy): complete P0 product journey and exact-source proof | DRAFT MERGEABLE/BEHIND | BEHIND; TESTS_RED (Lint commit messages); TESTS_RED (truth-drift); DRAFT_GATE | `pr-behind-main`, `pr-conflicting`, `pr-exact-head-provenance`, `red-workflows-scan` | 0d |
-| [szl-forge#464](https://github.com/szl-holdings/szl-forge/pull/464) chore(pypi): mark non-distributable pyproject files Private :: Do Not  | MERGEABLE/BEHIND | BEHIND | `pr-behind-main` | 0d |
-| [szl-frontier#212](https://github.com/szl-holdings/szl-frontier/pull/212) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/BEHIND | BEHIND | `pr-behind-main` | 0d |
-| [szl-invariants#29](https://github.com/szl-holdings/szl-invariants/pull/29) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/BEHIND | BEHIND | `pr-behind-main` | 0d |
-| [szl-kernels#46](https://github.com/szl-holdings/szl-kernels/pull/46) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/BEHIND | BEHIND | `pr-behind-main` | 0d |
-| [szl-openshell-receipts#6](https://github.com/szl-holdings/szl-openshell-receipts/pull/6) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/BEHIND | BEHIND | `pr-behind-main` | 0d |
-| [szl-typesafe-triage#34](https://github.com/szl-holdings/szl-typesafe-triage/pull/34) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/BEHIND | BEHIND | `pr-behind-main` | 0d |
-| [immune#155](https://github.com/szl-holdings/immune/pull/155) fix(immune): qualify external v2 authority and durable readiness | DRAFT MERGEABLE/CLEAN | DRAFT_GATE | `pr-exact-head-provenance` | 0d |
-| [szl-forge#295](https://github.com/szl-holdings/szl-forge/pull/295) feat(frontier): execute isolated vLLM-Omni runtime prerequisite observ | DRAFT UNKNOWN/UNKNOWN | TESTS_RED (observe (3.11)); DRAFT_GATE | `pr-exact-head-provenance`, `red-workflows-scan` | 0d |
-| [a11oy#2402](https://github.com/szl-holdings/a11oy/pull/2402) ci(estate): add the fabrication gate and widen the finance rebuild dea | MERGEABLE/BLOCKED | HF_PARITY (Protected base matches immutable HF repository) | `a11oy-parity-single-writer` | 0d |
-| [.github#823](https://github.com/szl-holdings/.github/pull/823) chore(templates): remove case-colliding duplicate PR template (step 1  | MERGEABLE/BLOCKED | TESTS_RED | `red-workflows-scan` | 0d |
-| [lyte-services#32](https://github.com/szl-holdings/lyte-services/pull/32) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/BLOCKED | TESTS_RED (python-compile) | `red-workflows-scan` | 0d |
-| [platform#869](https://github.com/szl-holdings/platform/pull/869) chore(pypi): mark non-distributable pyproject files Private :: Do Not  | MERGEABLE/BLOCKED | TESTS_RED | `red-workflows-scan` | 0d |
-| [szl-energy-attest#50](https://github.com/szl-holdings/szl-energy-attest/pull/50) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/UNSTABLE | TESTS_RED (test (3.10)) | `red-workflows-scan` | 0d |
-| [szl-estate-os#58](https://github.com/szl-holdings/szl-estate-os/pull/58) chore(pypi): mark non-distributable pyproject files Private :: Do Not  | MERGEABLE/UNSTABLE | TESTS_RED (offline-foundations (3.11)) | `red-workflows-scan` | 0d |
-| [szl-org-health#214](https://github.com/szl-holdings/szl-org-health/pull/214) feat(pypi): package manifest, canonical release path, and nightly rele | MERGEABLE/BLOCKED | TESTS_RED (audit / fail-closed) | `red-workflows-scan` | 0d |
-| [szl-safe-stack#22](https://github.com/szl-holdings/szl-safe-stack/pull/22) chore(pypi): mark non-distributable pyproject files Private :: Do Not  | MERGEABLE/BLOCKED | TESTS_RED (source-contract) | `red-workflows-scan` | 0d |
-| [a11oy#2403](https://github.com/szl-holdings/a11oy/pull/2403) chore(pypi): mark non-distributable pyproject files Private :: Do Not  | MERGEABLE/BLOCKED | — | — | 0d |
-| [khipu-consensus#39](https://github.com/szl-holdings/khipu-consensus/pull/39) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/BLOCKED | — | — | 0d |
-| [szl-frontier#211](https://github.com/szl-holdings/szl-frontier/pull/211) fix(outside-seat): stop flagging static Spaces and parity-matched age  | MERGEABLE/BLOCKED | — | — | 0d |
-| [szl-lake#65](https://github.com/szl-holdings/szl-lake/pull/65) fix(deps): szl-receipt is published as szl-receipt-dsse | MERGEABLE/BLOCKED | — | — | 0d |
-| [szl-mesh#56](https://github.com/szl-holdings/szl-mesh/pull/56) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/BLOCKED | — | — | 0d |
-| [szl-receipt#42](https://github.com/szl-holdings/szl-receipt/pull/42) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/BLOCKED | — | — | 0d |
-| [szl-router#80](https://github.com/szl-holdings/szl-router/pull/80) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/BLOCKED | — | — | 0d |
-| [yarqa#75](https://github.com/szl-holdings/yarqa/pull/75) chore(pypi): canonical Trusted-Publishing release path v2 | MERGEABLE/BLOCKED | — | — | 0d |
+| [immune#157](https://github.com/szl-holdings/immune/pull/157) fix(immune): distinguish empty and corrupt receipt ledgers | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
+| [immune#158](https://github.com/szl-holdings/immune/pull/158) fix(immune): preserve corrupt state and distinguish empty ledgers | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
+| [szl-evidence-mandate#6](https://github.com/szl-holdings/szl-evidence-mandate/pull/6) Make signed evidence receipts schema-conformant and enforceable | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
+| [szl-lambda-gate#64](https://github.com/szl-holdings/szl-lambda-gate/pull/64) fix(hf): check named Hub tag without listing gated refs | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
+| [szl-skills#27](https://github.com/szl-holdings/szl-skills/pull/27) fix(science): fail closed on ambiguous skill identities | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
+| [szl-skills#33](https://github.com/szl-holdings/szl-skills/pull/33) feat(science): pilot exact range propagation | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
+| [szl-skills#34](https://github.com/szl-holdings/szl-skills/pull/34) test(science): pilot offline package-to-result continuity | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
+| [szl-typesafe-triage#52](https://github.com/szl-holdings/szl-typesafe-triage/pull/52) fix(triage): publish canonical cards with immutable readback | MERGEABLE/CLEAN | READY | `pr-merge-conveyor` | 0d |
+| [a11oy#2411](https://github.com/szl-holdings/a11oy/pull/2411) fix(payloads/lambda_gate): zeroed axis yields exactly 0.0 — the Λ veto | MERGEABLE/BEHIND | BEHIND | `pr-behind-main` | 0d |
+| [a11oy#2414](https://github.com/szl-holdings/a11oy/pull/2414) chore(amaru/receipts): canonical JSON via szl-evidence-core — profile  | MERGEABLE/BEHIND | BEHIND | `pr-behind-main` | 0d |
+| [a11oy#2415](https://github.com/szl-holdings/a11oy/pull/2415) fix(inventory): include reserved public organization Space | MERGEABLE/BEHIND | BEHIND | `pr-behind-main` | 0d |
+| [a11oy#2416](https://github.com/szl-holdings/a11oy/pull/2416) fix(finance): expose bounded upstream response rejection evidence | MERGEABLE/BEHIND | BEHIND | `pr-behind-main` | 0d |
+| [a11oy#2422](https://github.com/szl-holdings/a11oy/pull/2422) fix(finance): expose source-bound version endpoint | MERGEABLE/BEHIND | BEHIND | `pr-behind-main` | 0d |
+| [a11oy#2427](https://github.com/szl-holdings/a11oy/pull/2427) feat(brand): adopt SZL KANCHAY founder direction in docs | MERGEABLE/BEHIND | BEHIND | `pr-behind-main` | 0d |
+| [a11oy#2435](https://github.com/szl-holdings/a11oy/pull/2435) fix(ci): validate router source authority without writes | MERGEABLE/BEHIND | BEHIND; HF_PARITY (Protected base matches immutable HF repository) | `a11oy-parity-single-writer`, `pr-behind-main` | 0d |
+| [a11oy#2436](https://github.com/szl-holdings/a11oy/pull/2436) fix(runtime): persist sovereign receipts and relock HF assets | MERGEABLE/BEHIND | BEHIND | `pr-behind-main` | 0d |
+| [a11oy#2441](https://github.com/szl-holdings/a11oy/pull/2441) fix(finance): use dated ECB reference FX when Frankfurter fails | MERGEABLE/BEHIND | BEHIND | `pr-behind-main` | 0d |
+| [szl-estate-os#63](https://github.com/szl-holdings/szl-estate-os/pull/63) docs(estate): record source closure and operational holds | DRAFT MERGEABLE/BEHIND | BEHIND; DRAFT_GATE | `pr-behind-main`, `pr-exact-head-provenance` | 0d |
+| [szl-forge#484](https://github.com/szl-holdings/szl-forge/pull/484) tools(estate_payload): reconcile managed candidates and fix Windows co | MERGEABLE/BEHIND | BEHIND | `pr-behind-main` | 0d |
+| [szl-forge#491](https://github.com/szl-holdings/szl-forge/pull/491) fix(frontier): frame model events on LF only | MERGEABLE/BEHIND | BEHIND | `pr-behind-main` | 0d |
+| [szl-forge#500](https://github.com/szl-holdings/szl-forge/pull/500) fix(clinical): verify wheel bytes against immutable source before inst | MERGEABLE/BEHIND | BEHIND | `pr-behind-main` | 0d |
+| [szl-frontier#214](https://github.com/szl-holdings/szl-frontier/pull/214) fix(lambda_gate): refusals carry szl.lambda/v1 codes; bool is not a nu | MERGEABLE/BEHIND | BEHIND | `pr-behind-main` | 0d |
+| [szl-kernels#47](https://github.com/szl-holdings/szl-kernels/pull/47) ci: drift guard — UnifiedReceiptChain byte-identical to szl-evidence-c | MERGEABLE/BEHIND | BEHIND | `pr-behind-main` | 0d |
+| [szl-typesafe-triage#44](https://github.com/szl-holdings/szl-typesafe-triage/pull/44) [HOLD: twelfth gate] release v1.1.0 — refusal-retrained five-seed stud | MERGEABLE/BEHIND | HOLD; BEHIND | `pr-behind-main` | 0d |
+| [szl-typesafe-triage#50](https://github.com/szl-holdings/szl-typesafe-triage/pull/50) test(lambda): re-vendor szl.lambda/v1 golden vectors 50 → 60 (zero nev | MERGEABLE/BEHIND | BEHIND | `pr-behind-main` | 0d |
+| [.github#831](https://github.com/szl-holdings/.github/pull/831) fix(estate): admit exact operational inventory effects | DRAFT UNKNOWN/UNKNOWN | DRAFT_GATE | `pr-exact-head-provenance` | 0d |
+| [.github#833](https://github.com/szl-holdings/.github/pull/833) fix: align v5 livez probe with process-only contract | DRAFT UNKNOWN/UNKNOWN | DRAFT_GATE; CP_EFFECT (Static control-plane effect boundary); PROVENANCE_BODY (szl/provenance) | `pr-control-plane-effect`, `pr-exact-head-provenance`, `pr-provenance-headings` | 0d |
+| [david-leads#139](https://github.com/szl-holdings/david-leads/pull/139) Require live federal lane proof for Space deployment success | DRAFT MERGEABLE/CLEAN | DRAFT_GATE | `pr-exact-head-provenance` | 0d |
+| [governed-receipt-spec#31](https://github.com/szl-holdings/governed-receipt-spec/pull/31) fix: fail closed on ambiguous receipt JSON and malformed evidence | DRAFT MERGEABLE/CLEAN | DRAFT_GATE | `pr-exact-head-provenance` | 0d |
+| [immune#159](https://github.com/szl-holdings/immune/pull/159) fix(immune): preserve hash-corrupt persisted ledgers | DRAFT MERGEABLE/CLEAN | DRAFT_GATE | `pr-exact-head-provenance` | 0d |
+| [platform#876](https://github.com/szl-holdings/platform/pull/876) fix(estate): fail closed on partial source and CI evidence | DRAFT MERGEABLE/BLOCKED | SECURITY_GATE (Dependency Vulnerability Scan); DRAFT_GATE | `pr-exact-head-provenance`, `security-gate-platform` | 0d |
+| [platform#877](https://github.com/szl-holdings/platform/pull/877) feat(agents-sdk-bridge): add source-only SZL Evidence Steward | DRAFT MERGEABLE/BLOCKED | SECURITY_GATE (Dependency Vulnerability Scan); DRAFT_GATE | `pr-exact-head-provenance`, `security-gate-platform` | 0d |
+| [platform#878](https://github.com/szl-holdings/platform/pull/878) fix(readiness-operability): preserve pinned source evidence states | DRAFT MERGEABLE/BLOCKED | SECURITY_GATE (Dependency Vulnerability Scan); DRAFT_GATE | `pr-exact-head-provenance`, `security-gate-platform` | 0d |
+| [szl-org-health#218](https://github.com/szl-holdings/szl-org-health/pull/218) Harden PyPI release-path audit evidence checks | DRAFT CONFLICTING/DIRTY | CONFLICTING; TESTS_RED (audit / fail-closed); DRAFT_GATE | `pr-conflicting`, `pr-exact-head-provenance`, `red-workflows-scan` | 0d |
+| [szl-skills#19](https://github.com/szl-holdings/szl-skills/pull/19) feat(science): preserve withdrawn dependencies in research recheck pla | DRAFT CONFLICTING/DIRTY | CONFLICTING; TESTS_RED (selfcheck); DRAFT_GATE | `pr-conflicting`, `pr-exact-head-provenance`, `red-workflows-scan` | 0d |
+| [szl-skills#21](https://github.com/szl-holdings/szl-skills/pull/21) feat(science): add offline skill package update review | DRAFT CONFLICTING/DIRTY | CONFLICTING; DRAFT_GATE | `pr-conflicting`, `pr-exact-head-provenance` | 0d |
+| [szl-skills#30](https://github.com/szl-holdings/szl-skills/pull/30) feat(science): add bounded public OSF registration witness pilot | DRAFT MERGEABLE/CLEAN | DRAFT_GATE | `pr-exact-head-provenance` | 0d |
+| [szl-skills#35](https://github.com/szl-holdings/szl-skills/pull/35) feat(science): preserve retired dependencies in change-impact reviews | DRAFT CONFLICTING/DIRTY | CONFLICTING; DRAFT_GATE | `pr-conflicting`, `pr-exact-head-provenance` | 0d |
+| [szl-skills#36](https://github.com/szl-holdings/szl-skills/pull/36) fix(science): retain replay refusal receipts and isolate CLI engine | DRAFT MERGEABLE/CLEAN | DRAFT_GATE | `pr-exact-head-provenance` | 0d |
+| [.github#830](https://github.com/szl-holdings/.github/pull/830) docs: make SZL front-door cards clearer on mobile | UNKNOWN/UNKNOWN | FRONT_DOOR (Exact taxonomy, front doors, and publication set); PROVENANCE_BODY (szl/provenance) | `org-profile-validators`, `pr-provenance-headings` | 0d |
+| [a11oy#2413](https://github.com/szl-holdings/a11oy/pull/2413) feat: add read-only civilian observatory | CONFLICTING/DIRTY | CONFLICTING | `pr-conflicting` | 0d |
+| [a11oy#2429](https://github.com/szl-holdings/a11oy/pull/2429) fix(release): make Lyte publication a guarded transaction | CONFLICTING/DIRTY | CONFLICTING; TESTS_RED (Finance source contract (3.12)) | `pr-conflicting`, `red-workflows-scan` | 0d |
+| [szl-skills#22](https://github.com/szl-holdings/szl-skills/pull/22) feat(science): audit complete hypothesis families before significance  | CONFLICTING/DIRTY | CONFLICTING | `pr-conflicting` | 0d |
+| [szl-skills#28](https://github.com/szl-holdings/szl-skills/pull/28) feat(science): preserve outcomes and stage the complete skill pack | CONFLICTING/DIRTY | CONFLICTING | `pr-conflicting` | 0d |
+| [szl-skills#32](https://github.com/szl-holdings/szl-skills/pull/32) Add bounded measurement harmonizer to split science pack | CONFLICTING/DIRTY | CONFLICTING | `pr-conflicting` | 0d |
+| [.github#832](https://github.com/szl-holdings/.github/pull/832) fix(hf): bound native kernel discovery and withhold private inventory | UNKNOWN/UNKNOWN | CP_EFFECT (Static control-plane effect boundary) | `pr-control-plane-effect` | 0d |
+| [szl-receipt#46](https://github.com/szl-holdings/szl-receipt/pull/46) test(lambda): re-vendor szl.lambda/v1 golden vectors 50 → 60 (zero nev | MERGEABLE/BLOCKED | — | — | 0d |
+| [uds-bundles#70](https://github.com/szl-holdings/uds-bundles/pull/70) fix(test): use one unittest import style | MERGEABLE/BLOCKED | — | — | 0d |
 
-## Open issues — 185 (ledger, not noise)
-- by repo: szl-forge 49, szl-frontier 37, a11oy 24, .github 22, szl-org-health 12, szl-gpu-bridge 7, killinchu 4, szl-serve 3, szl-engine-bench 2, szl-estate-os 2, szl-kernels 2, szl-hf-frontier 2
-- by class: frontier-eval 79, other 41, hf-drift 29, estate 16, security 8, owner-queue 6, ci 5, incident 1
-- by label: estate:blocked-external 66, estate:p0 50, estate:runtime-drift 28, estate:roadmap 9, estate:code-actionable 8, enhancement 4, incident 4, governance 3
+## Red on main (latest run per workflow)
+- .github · HF Living Constellation Operator · failure · [2026-10-02](https://github.com/szl-holdings/.github/actions/runs/37001505107)
+- .github · Publish Nexus Space · failure · [2026-10-02](https://github.com/szl-holdings/.github/actions/runs/37001419285)
+- .github · estate-governance-scorecard · failure · [2026-10-02](https://github.com/szl-holdings/.github/actions/runs/37001037391)
+- .github · Estate dead-man supervisor · failure · [2026-10-02](https://github.com/szl-holdings/.github/actions/runs/37000573298)
+- .github · FORGE-9 attest and approve · failure · [2026-10-02](https://github.com/szl-holdings/.github/actions/runs/36999568414)
+- a11oy · Brain Frontier v7 refresh · failure · [2026-10-02](https://github.com/szl-holdings/a11oy/actions/runs/36995152318)
+- david-leads · David frontier live-lanes canary · failure · [2026-10-02](https://github.com/szl-holdings/david-leads/actions/runs/36975315617)
+- david-leads · Rotate David Space credentials · failure · [2026-09-30](https://github.com/szl-holdings/david-leads/actions/runs/36788140207)
+- governed-receipt-spec · Scorecard · startup_failure · [2026-10-01](https://github.com/szl-holdings/governed-receipt-spec/actions/runs/36803011306)
+- immune · Deploy IMMUNE Spaces · failure · [2026-10-01](https://github.com/szl-holdings/immune/actions/runs/36917371243)
+- platform · READINESS-SECURITY · failure · [2026-10-02](https://github.com/szl-holdings/platform/actions/runs/37001273347)
+- platform · READINESS-RELIABILITY · failure · [2026-10-02](https://github.com/szl-holdings/platform/actions/runs/36999740769)
+- platform · READINESS-OBSERVABILITY · failure · [2026-10-02](https://github.com/szl-holdings/platform/actions/runs/36997240612)
+- szl-estate-os · Estate readiness evidence · failure · [2026-10-02](https://github.com/szl-holdings/szl-estate-os/actions/runs/36995711134)
+- szl-frontier · Hugging Face frontier watch · failure · [2026-10-01](https://github.com/szl-holdings/szl-frontier/actions/runs/36863742165)
+- szl-lambda-gate · hf-mirror · failure · [2026-10-02](https://github.com/szl-holdings/szl-lambda-gate/actions/runs/36965793867)
+- szl-typesafe-triage · publish-hf-card · failure · [2026-10-01](https://github.com/szl-holdings/szl-typesafe-triage/actions/runs/36939076612)
+
+## Open issues — 188 (ledger, not noise)
+- by repo: szl-forge 49, szl-frontier 37, a11oy 26, .github 21, szl-org-health 12, szl-gpu-bridge 7, killinchu 4, szl-serve 3, vertical-services 2, szl-engine-bench 2, szl-estate-os 2, szl-kernels 2
+- by class: frontier-eval 79, other 46, hf-drift 27, estate 16, security 8, owner-queue 6, ci 5, incident 1
+- by label: estate:blocked-external 66, estate:p0 50, estate:runtime-drift 26, estate:roadmap 9, estate:code-actionable 8, enhancement 4, incident 4, governance 3
 - `estate:p0`: 50 · `estate:code-actionable`: 8
 
 Code-actionable now:
@@ -117,18 +115,8 @@ Code-actionable now:
 - [.github#575](https://github.com/szl-holdings/.github/issues/575) SZL Responsive Estate v3 rollout
 
 ## Security posture (org)
-- Dependabot alerts open: gh api --paginate --slurp failed: gh: API rate limit exceeded for user ID 270976497. If you reach out to GitHub Support 
-- Secret-scanning alerts open: 1 · {'szl-forge': 1}
+- Dependabot alerts open: 1 · severity {'low': 1}
+- Secret-scanning alerts open: 0
 - Managed security configuration 252588 (secret scanning, push protection, Dependabot alerts + security updates, private vuln reporting) is enforced on every repository; code-scanning backlog is tracked in runbook `codeql-scorecard-backlog`.
 
 _Read-only snapshot. Nothing was merged, edited, or re-run by this board._
-
-## Execution receipt — 2026-09-30 22:35 ET (CTO run)
-- Merged (squash, all checks green, non-draft, non-HOLD): 27 PRs — YARQA-ATTN#11 and the 26 `chore(pypi): canonical Trusted-Publishing release path v2` PRs (vsp-otel#136, szl-wave1-report#8, szl-vertical-forge#10, szl-v14#4, szl-provctl#12, szl-platform#17, szl-pin#8, szl-ouroboros#33, szl-nemo#14, szl-khipu#82, szl-guardrail-receipt#6, szl-govsign#13, szl-formulas#16, szl-evidence-mandate#2, szl-evidence-litellm#5, szl-engine-bench#11, szl-eclipse#9, szl-crosscheck#12, szl-ci-witness#11, szl-calibration#11, szl-blocked#18, szl-block-kv#23, puriq-live#23, khipu-x1#11, ayllu#47, a11oy-factory#53). Branch deletion for the 26 hit the API rate limit; the branches `chore/pypi-release-path-v2` remain and can be pruned.
-- Branches updated onto main: platform#869, a11oy#2403, szl-typesafe-triage#34, szl-openshell-receipts#6, szl-kernels#46, szl-invariants#29, szl-frontier#212, szl-forge#464.
-- Opened: .github#823 (remove case-colliding duplicate PR template, step 1 of 2) — all 28 checks green, auto-merge armed; it waits on the FORGE-9 merge-queue controller (`deploy/staging` + App attestation), whose "attest and approve" lane was red on main today. Step 2 (seven provenance headings into `pull_request_template.md`) is staged in `templates/org-pull-request-template.md` and opens after #823 lands.
-- Closed: .github#822 (superseded by #823).
-- Showcase: `szl-holdings/szl-showcase` public, GitHub Pages enabled (main:/), custom domain `showcase.a-11-oy.com` set on Pages; live now at https://szl-showcase.pplx.app. DNS CNAME is owner-side (OWNER-ONLY.ps1 part 3) because the Cloudflare connector token fails auth (code 9106).
-- Security (read-only verification): managed configuration 252588 enforced on every repository incl. the two created tonight; 1 open Dependabot alert (platform, npm, low); 1 open secret-scanning alert (szl-forge#2, inactive, vendored source — owner resolves, part 5); 467 open code-scanning alerts across 18 repos, 7 critical (3 DangerousWorkflow, 3 partial-SSRF, 1 szl-router) — wave plan in runbook `codeql-scorecard-backlog`.
-- Org: enterprise plan, 3 seats, 2FA required, 10 teams already defined, members cannot create public repos. Org rulesets need `admin:org` (owner, part 4) — that one call protects all 52 unprotected default branches.
-- Issues: 185 open is a live ledger (160 authored by Stephen, 25 by automation); 1 stale >30d; 50 `estate:p0`, 8 `estate:code-actionable`. Nothing was closed; the class/label breakdown above is the triage board.
