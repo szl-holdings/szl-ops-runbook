@@ -85,6 +85,12 @@ def classify(pr: dict, now: dt.datetime) -> dict:
         if not isinstance(c, dict):
             unknown += 1
             continue
+        # CheckRun and legacy StatusContext evidence have different schemas.
+        # A conclusion alone is not proof that a check actually completed.
+        is_check_run = any(key in c for key in ("status", "conclusion", "name"))
+        if is_check_run and (not isinstance(c.get("status"), str) or not c["status"] or "state" in c):
+            unknown += 1
+            continue
         name = c.get("name") or c.get("context") or ""
         status = c.get("status") or ""
         concl = c.get("conclusion") or c.get("state") or ""

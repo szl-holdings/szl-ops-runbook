@@ -75,6 +75,18 @@ class ClassificationTests(unittest.TestCase):
     def test_legacy_success_supported(self):
         self.assertIn("READY", self.classes(pr(statusCheckRollup=[dict(context="legacy", state="SUCCESS")])))
 
+    def test_success_requires_completed_execution_evidence(self):
+        for status in (None, "", False, 0):
+            with self.subTest(status=status):
+                self.assertNotIn("READY", self.classes(pr(statusCheckRollup=[dict(name="tests", status=status, conclusion="SUCCESS")])))
+        self.assertNotIn("READY", self.classes(pr(statusCheckRollup=[dict(name="tests", conclusion="SUCCESS")])))
+
+    def test_mixed_check_and_legacy_shapes_are_unknown(self):
+        for check in (dict(name="tests", conclusion="SUCCESS", state="SUCCESS"),
+                      dict(context="legacy", state="FAILURE", conclusion="SUCCESS")):
+            with self.subTest(check=check):
+                self.assertNotIn("READY", self.classes(pr(statusCheckRollup=[check])))
+
     def test_blocking_review_decisions(self):
         for decision in ("CHANGES_REQUESTED", "REVIEW_REQUIRED", "UNKNOWN"):
             with self.subTest(decision=decision):
