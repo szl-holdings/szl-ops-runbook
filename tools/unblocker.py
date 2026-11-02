@@ -18,9 +18,12 @@ Blocker classes (in priority order; a PR can carry several):
   HF_PARITY        a11oy parity / single-writer / killinchu sync -> a11oy-parity-single-writer
   SECURITY_GATE    Security Gate / Dependency Vulnerability Scan -> security-gate-platform
   TESTS_RED        any other failing check                        -> red-workflows-scan
-  REVIEW_WAIT      review requested, no decision, >2d            -> (ask reviewer / self-approve policy)
+  CHECKS_PENDING   checks still running                         -> wait for evidence
+  CHECKS_UNKNOWN   absent or unrecognized check evidence         -> inspect coverage
+  REVIEW_WAIT      outstanding review request or review required -> ask reviewer
+  CHANGES_REQUESTED reviewer requested changes                   -> address review
   HOLD             title carries HOLD / Stephen decides          -> skip, listed separately
-  READY            MERGEABLE + CLEAN + non-draft                 -> pr-merge-conveyor
+  READY            observed checks pass, CLEAN, no known blocker -> owner review, not merge authority
 """
 from __future__ import annotations
 
@@ -50,7 +53,7 @@ CHECK_MAP = [
     ("test (", "TESTS_RED", "red-workflows-scan", "Open the failing step log; conflicting PRs often fail tests only because of the stale base."),
     ("observe (", "TESTS_RED", "red-workflows-scan", "Observation lane failed; check the prerequisite it probes."),
 ]
-PRIORITY = {"READY": 0, "BEHIND": 1, "DRAFT_GATE": 2, "PROVENANCE_BODY": 3, "FRONT_DOOR": 3, "CONFLICTING": 4, "HF_PARITY": 5, "SECURITY_GATE": 6, "CP_EFFECT": 7, "TESTS_RED": 8, "REVIEW_WAIT": 9, "HOLD": 99}
+PRIORITY = {"READY": 0, "BEHIND": 1, "DRAFT_GATE": 2, "PROVENANCE_BODY": 3, "FRONT_DOOR": 3, "CONFLICTING": 4, "HF_PARITY": 5, "SECURITY_GATE": 6, "CP_EFFECT": 7, "TESTS_RED": 8, "CHECKS_PENDING": 8, "CHECKS_UNKNOWN": 8, "MERGE_STATE_UNKNOWN": 8, "CHANGES_REQUESTED": 9, "REVIEW_WAIT": 9, "HOLD": 99}
 
 
 def gh(*args: str) -> str:
@@ -72,15 +75,32 @@ def collect(org: str) -> list[dict]:
 
 
 def classify(pr: dict, now: dt.datetime) -> dict:
-    checks = pr.get("statusCheckRollup") or []
+    raw_checks = pr.get("statusCheckRollup")
+    checks = raw_checks if isinstance(raw_checks, list) else []
     failing = []
+    pending = 0
+    unknown = int(not checks)
+    successful = 0
     for c in checks:
+        if not isinstance(c, dict):
+            unknown += 1
+            continue
         name = c.get("name") or c.get("context") or ""
-        concl = (c.get("conclusion") or c.get("state") or "").upper()
+        status = c.get("status") or ""
+        concl = c.get("conclusion") or c.get("state") or ""
+        if not isinstance(name, str) or not isinstance(status, str) or not isinstance(concl, str):
+            unknown += 1
+            continue
+        status, concl = status.upper(), concl.upper()
         if concl in FAIL:
             failing.append(name)
+        if status in {"IN_PROGRESS", "QUEUED", "PENDING", "WAITING", "REQUESTED", "PENDING_DEPLOYMENT"} or concl == "PENDING":
+            pending += 1
+        elif status not in {"", "COMPLETED"} or concl not in FAIL | {"SUCCESS", "NEUTRAL", "SKIPPED"} or not name:
+            unknown += 1
+        elif concl == "SUCCESS":
+            successful += 1
     failing = sorted(set(failing))
-    pending = sum(1 for c in checks if (c.get("status") or "").upper() in {"IN_PROGRESS", "QUEUED", "PENDING"} or (c.get("state") or "").upper() == "PENDING")
     blockers: list[dict] = []
     seen = set()
 
@@ -113,17 +133,25 @@ def classify(pr: dict, now: dt.datetime) -> dict:
     missing_headings = [h for h in ("Origin", "Rights", "Agents and tools", "Tests", "Security", "Rollback", "Known limits") if not __import__("re").search(r"(?m)^##\s+" + __import__("re").escape(h) + r"\s*$", body)]
     # The szl/provenance check only runs where the solo-provenance workflow exists (the .github repo) or where the
     # rollup carries it. Elsewhere, missing headings are advisory and must not be reported as a blocker.
-    provenance_enforced = pr["repo"].endswith("/.github") or any((c.get("name") or c.get("context") or "") == "szl/provenance" for c in checks)
+    provenance_enforced = pr["repo"].endswith("/.github") or any(isinstance(c, dict) and (c.get("name") or c.get("context") or "") == "szl/provenance" for c in checks)
     if missing_headings and provenance_enforced and not any(b["class"] == "PROVENANCE_BODY" for b in blockers):
         add("PROVENANCE_BODY", "pr-provenance-headings", f"PR body missing headings: {', '.join(missing_headings)}.")
     updated = dt.datetime.fromisoformat(pr["updatedAt"].replace("Z", "+00:00"))
     stale_days = (now - updated).days
-    if pr.get("reviewRequests") and not pr.get("reviewDecision") and stale_days >= 2:
-        add("REVIEW_WAIT", "", f"Review requested {stale_days}d ago with no decision.")
-    if not blockers and pr["mergeable"] == "MERGEABLE" and pr["mergeStateStatus"] in {"CLEAN", "HAS_HOOKS", "UNSTABLE"} and not pr["isDraft"] and not failing:
-        add("READY", "pr-merge-conveyor", "Green and current: squash-merge.")
-    if not blockers and pending:
-        add("TESTS_RED", "red-workflows-scan", f"{pending} check(s) still running; re-check later.")
+    if pr.get("reviewDecision") == "CHANGES_REQUESTED":
+        add("CHANGES_REQUESTED", "", "Address the requested changes and obtain a new review.")
+    elif pr.get("reviewDecision") == "REVIEW_REQUIRED" or pr.get("reviewRequests"):
+        add("REVIEW_WAIT", "", "Required or requested review remains outstanding.")
+    elif pr.get("reviewDecision") not in {None, "", "APPROVED"}:
+        add("REVIEW_WAIT", "", "Review decision is unknown; inspect the current review evidence.")
+    if pending:
+        add("CHECKS_PENDING", "red-workflows-scan", f"{pending} check(s) still running; re-check later.")
+    if unknown or (not successful and not failing and not pending):
+        add("CHECKS_UNKNOWN", "red-workflows-scan", "Check evidence is absent, unrecognized, or has no successful result; inspect coverage.")
+    if pr["mergeable"] not in {"MERGEABLE", "CONFLICTING"} or pr["mergeStateStatus"] not in {"CLEAN", "BEHIND"}:
+        add("MERGE_STATE_UNKNOWN", "", "Merge state is not confirmed clean; inspect the current GitHub blockers.")
+    if not blockers and pr["mergeable"] == "MERGEABLE" and pr["mergeStateStatus"] == "CLEAN" and not pr["isDraft"]:
+        add("READY", "pr-merge-conveyor", "Observed checks pass; verify required reviews, current head and owner merge authorization.")
     rank = min(PRIORITY.get(b["class"], 50) for b in blockers) if blockers else 50
     return {
         "repo": pr["repo"].split("/")[1], "number": pr["number"], "title": pr["title"], "url": pr["url"], "draft": pr["isDraft"],
@@ -154,10 +182,11 @@ def board(rows: list[dict], org: str, now: dt.datetime, red_main: list[dict] | N
     ready = [r for r in rows if any(b["class"] == "READY" for b in r["blockers"])]
     holds = [r for r in rows if r["hold"]]
     lines = [f"# Unblocker board — {org} — {date}", "",
-             f"{len(rows)} open PRs · {len(ready)} ready to merge · {len(holds)} on HOLD · blockers: " + ", ".join(f"{k} {v}" for k, v in counts.most_common()), "",
-             "## Top fixes before you start coding", *(top or ["- Nothing mechanical is blocking; everything open is HOLD or green."]), ""]
+             f"{len(rows)} open PRs · {len(ready)} ready for owner review · {len(holds)} on HOLD · blockers: " + ", ".join(f"{k} {v}" for k, v in counts.most_common()), "",
+             "Observed checks are a snapshot, not proof of complete required-check coverage or permission to merge.", "",
+             "## Top fixes before you start coding", *(top or ["- No classified mechanical blockers; inspect the snapshot and owner decisions before action."]), ""]
     if ready:
-        lines += ["## Ready to merge (squash)", *(f"- [{r['repo']}#{r['number']}]({r['url']}) {r['title']} · {r['size']}" for r in ready), ""]
+        lines += ["## Checks passed — ready for owner review", *(f"- [{r['repo']}#{r['number']}]({r['url']}) {r['title']} · {r['size']}" for r in ready), ""]
     lines += ["## Every open PR, ranked by the cheapest unblock", "", "| PR | state | blocker → fix | runbook | stale |", "|---|---|---|---|---|"]
     for r in rows:
         bl = "; ".join(f"{b['class']}" + (f" ({b['detail']})" if b['detail'] and b['class'] in {'TESTS_RED','CP_EFFECT','HF_PARITY','SECURITY_GATE','FRONT_DOOR','PROVENANCE_BODY'} else "") for b in r["blockers"]) or "—"
