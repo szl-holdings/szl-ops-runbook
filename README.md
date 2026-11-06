@@ -57,3 +57,5 @@ Rules: real commands only (no placeholders you have not run), name the failure b
 This runbook records how to restore surfaces and gates. It does not promote models, bypass required checks, or relabel UNAVAILABLE as green. Where a fix needs the owner (shell on the own-metal box, org-admin permission, token minting), the entry says so.
 
 Built from the 2026-10-01 estate audit: 132 repositories (103 active), 24 open PRs, 709 default-branch workflows scanned (26 red), 50 models / 35 datasets / 33 Spaces, both domains behind Cloudflare with DNSSEC.
+
+Estate on Hugging Face: models, datasets and Spaces are published under the [SZLHOLDINGS](https://huggingface.co/SZLHOLDINGS) org.
