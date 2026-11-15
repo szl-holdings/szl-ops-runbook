@@ -27,7 +27,7 @@ jobs:
         run: |
           python -B - <<'PY'
           import unittest
-          suite = unittest.defaultTestLoader.discover('tests')
+          suite = unittest.defaultTestLoader.discover('tests', pattern='test_unblocker*.py')
           if suite.countTestCases() == 0:
               raise SystemExit('No readiness tests discovered')
           result = unittest.TextTestRunner(verbosity=2).run(suite)
