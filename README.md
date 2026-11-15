@@ -59,3 +59,9 @@ This runbook records how to restore surfaces and gates. It does not promote mode
 Built from the 2026-10-01 estate audit: 132 repositories (103 active), 24 open PRs, 709 default-branch workflows scanned (26 red), 50 models / 35 datasets / 33 Spaces, both domains behind Cloudflare with DNSSEC.
 
 Estate on Hugging Face: models, datasets and Spaces are published under the [SZLHOLDINGS](https://huggingface.co/SZLHOLDINGS) org.
+
+## Unblocker snapshot validation
+
+Run `python -m unittest discover -s tests -v` for offline classifier and board regressions. These tests do not invoke `gh` or contact providers.
+
+The board's `READY` classification means observed checks passed and no known blocker was found; it is ready for owner review, not permission to merge. Pending, absent or unrecognized check evidence, outstanding reviews, requested changes and non-clean merge states remain visible blockers. A skipped-only or neutral-only rollup is not green. Required-check coverage, current-head freshness and merge authorization must still be verified separately. Collection limits and historical boards are unchanged.
