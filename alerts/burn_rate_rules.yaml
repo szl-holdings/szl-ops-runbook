@@ -1,0 +1,51 @@
+# ============================================================================
+# MULTI-WINDOW, MULTI-BURN-RATE ALERT RULES  (PROPOSED, not deployed anywhere)
+# Owner lane: Saywa (SRE).  Written 2026-11-19 ~3:50 AM ET.
+# APPROVAL NEEDED: none to keep locally and run tests. To ACTIVATE: Stephen yes/no (D2) AND (a) the
+#   alert-relay fix deployed + proven (deadman/DEADMAN_DESIGN.md), (b) a scoped CF token with Analytics:Read.
+#   Without a proven delivery channel these rules would page into a void.
+# BLAST RADIUS: zero while local. When activated: one read-only scheduled Worker; can only send alerts.
+# ROLLBACK: delete the cron trigger / Worker.
+# Method: Google SRE workbook ch.5 "Alerting on SLOs" - multiwindow, multi-burn-rate
+#   https://sre.google/workbook/alerting-on-slos/
+# Math (verified by tests/test_burnrate.py): burn = error_ratio / (1 - slo_target).
+#   Budget consumed by a window = burn * window_hours / (30*24).
+#   14.4x for 1h = 2% of a 30d budget; 6x for 6h = 5%; 1x for 3d = 10%.
+# An alert fires only when BOTH the long and the short window exceed the threshold (short window = fast reset).
+# ============================================================================
+schema: szl.burnrate-rules/v1
+slo_file: ../slo/slos.yaml
+slo_period_hours: 720
+tiers:
+  - name: page-fast
+    severity: page
+    long_window: 1h
+    short_window: 5m
+    burn_rate: 14.4
+    budget_consumed_pct: 2
+  - name: page-slow
+    severity: page
+    long_window: 6h
+    short_window: 30m
+    burn_rate: 6
+    budget_consumed_pct: 5
+  - name: ticket
+    severity: ticket
+    long_window: 3d
+    short_window: 6h
+    burn_rate: 1
+    budget_consumed_pct: 10
+apply_to:
+  - journey: a11oy-inference
+    sli: availability
+  - journey: alert-relay
+    sli: delivery_success
+  - journey: revenue-tracker
+    sli: availability
+low_traffic_rule:
+  # Workbook: low-traffic services make ratio alerts noisy. SZL traffic is low (29 paid-path requests in ~8 h on Nov 12).
+  min_requests_in_long_window: 20
+  below_minimum: "do not alert on ratio; rely on the synthetic probe + dead-man's switch (deadman/)"
+routing:
+  page: "channel must be independent of ntfy.a11oy.net (see deadman design) - UNKNOWN until Stephen picks one (D3)"
+  ticket: "GitHub issue in szl-holdings/a11oy labelled slo-burn"

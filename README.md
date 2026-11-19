@@ -65,3 +65,12 @@ Estate on Hugging Face: models, datasets and Spaces are published under the [SZL
 Run `python -m unittest discover -s tests -v` for offline classifier and board regressions. These tests do not invoke `gh` or contact providers.
 
 The board's `READY` classification means observed checks passed and no known blocker was found; it is ready for owner review, not permission to merge. Pending, absent or unrecognized check evidence, outstanding reviews, requested changes and non-clean merge states remain visible blockers. A skipped-only or neutral-only rollup is not green. Required-check coverage, current-head freshness and merge authorization must still be verified separately. Collection limits and historical boards are unchanged.
+
+## 30-day SLO targets
+
+Accepted targets over 30 days: inference 99%, alerts 99.5%, revenue tracker 99.5%.
+
+- [slo/slos.yaml](slo/slos.yaml) — SLO definitions
+- [alerts/burn_rate_rules.yaml](alerts/burn_rate_rules.yaml) — multi-window burn-rate alert rules
+- [alerts/burnrate.py](alerts/burnrate.py) — local burn-rate evaluator
+- [tests/test_burnrate.py](tests/test_burnrate.py) — checks run by the existing `python -m pytest` suite
