@@ -1,0 +1,79 @@
+# ============================================================================
+# SZL SLO DEFINITIONS  (PROPOSED - no measured baseline exists; every target is a starting hypothesis)
+# Owner lane: Saywa (SRE).  Written 2026-11-19 ~3:45 AM ET.
+# APPROVAL NEEDED: none to keep this file locally. Stephen yes/no to ADOPT the targets as the estate's
+#   official SLOs (decision D2 in PRODUCTION_PLAN_2026-11-19.md). Nothing in this file touches any system.
+# BLAST RADIUS: zero (documentation + test input only).
+# ROLLBACK: delete the file.
+# Source for method: Google SRE book ch.4 "Service Level Objectives"
+#   https://sre.google/sre-book/service-level-objectives/ and SRE workbook ch.2 "Implementing SLOs"
+#   https://sre.google/workbook/implementing-slos/
+# Rule: a measured SLI is NOT_RUN until the data_source below is actually queried. Baselines are UNKNOWN.
+# ============================================================================
+schema: szl.slo/v1
+window_days: 30
+status: ACCEPTED   # D2 approved by Stephen, Saywa chat t22u, 2026-11-19 4:16 AM ET
+journeys:
+  - id: a11oy-inference
+    description: Anonymous-or-authorized client gets a valid model answer from inference.a-11-oy.com.
+    owner_lane: Saywa (SRE) with Apu (CTO) accepting
+    topology_as_of: "2026-11-19 3:30 AM ET: DNS inference.a-11-oy.com -> tunnel szl-salad-inference d523c841 (healthy, 4 conns, ONE origin IP) -> http://localhost:11434"
+    slis:
+      - name: availability
+        definition: "good = HTTP status < 500 on /v1/models and /v1/chat/completions; 402 (x402 challenge) counts as GOOD only on paid paths and only when the request carried no payment signature; total = all requests excluding synthetic canaries and Cloudflare Access 302/403"
+        data_source: "Cloudflare GraphQL httpRequestsAdaptiveGroups, host=inference.a-11-oy.com (sampled; record sample ratio)  +  synthetic probe (see deadman/)"
+        measured_baseline: UNKNOWN
+      - name: latency_p95_models_endpoint
+        definition: "p95 time-to-first-byte of GET /v1/models measured by synthetic probe from outside Cloudflare"
+        data_source: synthetic probe
+        measured_baseline: UNKNOWN
+    objectives:
+      - sli: availability
+        target: 0.99          # 1% budget = ~7.2 h / 30 d. Single GPU origin; do not promise more until replicas exist (tunnel/HA_PLAN.md).
+      - sli: latency_p95_models_endpoint
+        target_ms: 1500
+        compliance: 0.95
+    no_charge_invariant:
+      statement: "A paid (x402) request that receives a 5xx/530 MUST NOT be settled."
+      status: UNVERIFIED   # Cloudflare docs silent for 'exact' pricing; see /workspace/saywa/fleet/inference_tunnel_2026-11-12.md section 5
+      verification: "test hostname + test wallet, needs Stephen approval (spend)"
+  - id: alert-relay
+    description: An alert POSTed to ntfy.a11oy.net reaches a subscriber.
+    owner_lane: Saywa (SRE) with Ayni (PM) for the a11oy critical path
+    topology_as_of: "szl-alert-relay Worker, active version 4eb36026 (wrangler, 2026-11-18 1:50 AM ET, message commit fd73fd5d). Whether it contains the 5 s upstream timeout: UNKNOWN"
+    slis:
+      - name: delivery_success
+        definition: "good = synthetic heartbeat POST returns 2xx from the relay within 5 s AND (phase 2) a subscriber-side receipt is observed within 60 s; total = synthetic heartbeats sent"
+        data_source: "scheduled canary (deadman/DEADMAN_DESIGN.md)"
+        measured_baseline: "UNKNOWN - no POST ever observed with 2xx in the 200-event telemetry window (alert_canary_2026-11-13.md)"
+    objectives:
+      - sli: delivery_success
+        target: 0.995
+  - id: revenue-tracker
+    description: Requests on a-11-oy.com/v1/* and /api/a11oy/v1/* handled by Worker szl-revenue-tracker.
+    owner_lane: Saywa (SRE) for runtime; Apu (CTO) / szl-trust owner for source
+    topology_as_of: "Worker szl-revenue-tracker; deployments 2026-11-14/15 include two source=api 'Automatic deployment on upload' versions (unattributed to git). szl-trust #122/#124 pending Stephen"
+    slis:
+      - name: availability
+        definition: "good = response status < 500 ; total = requests on the two routes"
+        data_source: "Cloudflare Workers metrics / GraphQL workersInvocationsAdaptive (errors vs requests)"
+        measured_baseline: UNKNOWN
+      - name: deploy_provenance
+        definition: "fraction of live versions whose source=wrangler and message is a commit SHA present in szl-holdings/szl-trust"
+        data_source: "GET /accounts/{id}/workers/scripts/szl-revenue-tracker/deployments"
+        measured_baseline: "2 of the last 4 versions are source=api (50% unattributed) as read 2026-11-19 3:11 AM ET"
+    objectives:
+      - sli: availability
+        target: 0.995
+      - sli: deploy_provenance
+        target: 1.0
+error_budget_policy:
+  approval_for_policy_enforcement: "APPROVED: Stephen D2, 2026-11-19 4:16 AM ET (30-day targets 0.99 inference, 0.995 alerts, 0.995 revenue tracker)"
+  rules:
+  # Google SRE workbook "Error Budget Policy" https://sre.google/workbook/error-budget-policy/
+    - when: "budget remaining < 25% in the 30 d window"
+      then: "freeze non-reliability changes for that journey (no new features; fixes and rollbacks only)"
+    - when: "budget exhausted"
+      then: "freeze everything except rollback/fix; postmortem required (postmortem/TEMPLATE.md)"
+    - when: "single incident burns > 20% of the 30 d budget"
+      then: "postmortem required within 5 business days"
