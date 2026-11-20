@@ -74,3 +74,4 @@ Accepted targets over 30 days: inference 99%, alerts 99.5%, revenue tracker 99.5
 - [alerts/burn_rate_rules.yaml](alerts/burn_rate_rules.yaml) — multi-window burn-rate alert rules
 - [alerts/burnrate.py](alerts/burnrate.py) — local burn-rate evaluator
 - [tests/test_burnrate.py](tests/test_burnrate.py) — checks run by the existing `python -m pytest` suite
+- [alerts/DELIVERY_ADMISSION.md](alerts/DELIVERY_ADMISSION.md) — source-only 429/UNKNOWN and subscriber-evidence boundaries; not a deployed monitor or signed delivery proof.
