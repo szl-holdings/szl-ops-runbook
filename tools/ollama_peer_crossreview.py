@@ -160,7 +160,10 @@ def consult_crossreview(
             '{"verdict":"APPROVE|REJECT|ABSTAIN",'
             '"reason_code":"NO_FINDINGS|SOURCE_DRIFT|PATCH_MISMATCH|'
             'TEST_FAILURE|POLICY_HOLD|SECURITY_RISK|INSUFFICIENT_EVIDENCE|'
-            'UNSUPPORTED_CLAIM","finding":"12-800 character rationale"}. '
+            'UNSUPPORTED_CLAIM","finding":"ONE plain sentence, 25-160 characters"}. '
+            "Select exactly ONE allowed verdict and reason, not the | choices. "
+            "The finding MUST be 25-160 characters, one sentence, no lists, "
+            "no markdown and no extra JSON fields. "
             "APPROVE must use NO_FINDINGS; any refusal must use a different code. "
             "When uncertain, ABSTAIN/INSUFFICIENT_EVIDENCE.\n"
             f"repo={repo}\nsource_sha={source_sha}\n"
@@ -168,10 +171,33 @@ def consult_crossreview(
             f"opponent_text_json={json.dumps(peer_text, ensure_ascii=True)}"
         )
         try:
-            vote = _vote(transport(model, prompt))
+            attempts = 1
+            try:
+                vote = _vote(transport(model, prompt))
+            except PeerConsultHold as exc:
+                if str(exc) not in {
+                    "CROSS_REVIEW_FINDING_INVALID",
+                    "CROSS_REVIEW_INCOMPLETE",
+                    "CROSS_REVIEW_JSON_INVALID",
+                }:
+                    raise
+                # A single same-model correction is allowed for ordinary output
+                # formatting failures. Do not forward the invalid response,
+                # loosen the schema, or retry tool calls/secret/duplicate-key
+                # violations: those are immutable refusal evidence.
+                attempts = 2
+                correction = (
+                    "\nFORMAT_RETRY_ONLY: Your previous response did not meet "
+                    "the strict JSON/length contract. Emit ONLY one JSON object "
+                    "with exactly verdict, reason_code, finding. Select one "
+                    "allowed verdict/reason pair; finding must be ONE concise "
+                    "sentence of 25-160 characters. Never output markdown. "
+                    "You still have NO tools or approval authority."
+                )
+                vote = _vote(transport(model, prompt + correction))
             output["cross_reviews"].append({
                 "model": model, "peer_response_sha256": peer_digest,
-                "observed_at_utc": observed, **vote,
+                "observed_at_utc": observed, "attempts": attempts, **vote,
             })
             if vote["verdict"] == "REJECT":
                 output["reasons"].append("PEER_DISSENT")
@@ -181,7 +207,7 @@ def consult_crossreview(
             output["cross_reviews"].append({
                 "model": model, "peer_response_sha256": peer_digest,
                 "observed_at_utc": observed, "verdict": "ABSTAIN",
-                "reason_code": "INSUFFICIENT_EVIDENCE",
+                "reason_code": "INSUFFICIENT_EVIDENCE", "attempts": attempts,
                 "error_code": str(exc) if isinstance(exc, PeerConsultHold)
                               else "TRANSPORT_UNAVAILABLE",
             })
