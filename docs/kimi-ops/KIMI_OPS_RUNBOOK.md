@@ -3,6 +3,10 @@
 Standing CTO operator: Kimi (kimi-k3.1-pro:cloud via Ollama on estate laptop).
 Charter: fail-closed, measured receipts only, never fabricate, secrets never enter model context (local harness scripts hold secrets; receipts only return to the model), parallel lanes co-exist (attribute, never absorb; yield on owned work), owner gates absolute, never auto-publish the 5 private repos.
 
+## Source-only peer-coding gate
+
+See [AGENTIC_PEER_GATE.md](AGENTIC_PEER_GATE.md) for the deterministic Kimi JSON intake, negative controls and source-only handoff. It does not authorize model-supplied shell commands, merges, signing or deployments.
+
 ## Loop
 - Sessions 1-4 transcripts included (charter handoff, mandate expansion, lap-2 frontier sweep adjudication, lap-3 re-adjudication).
 - Queue v1.1: items 1-3 triaged (sentra BLOCKED_OWNER_GATE ghcr grant; szl-drift ALREADY_REMEDIATED; david-leads BLOCKED_DEPLOYED_RUNTIME_404); item 4 CLOSED NO_CI_REQUIRED (frontier-54-runs/frontier-55-runs mirrors-by-design of HF system of record; pliny sandbox + estate-backup archives; szl-acoustic-research placeholder); items 5-6 blocked; 7-11 new planes (Snowflake bring-up, HF token gate, PyPI trustee, CF token, GHCR verify).
