@@ -58,6 +58,29 @@ cycle **HOLDs**. Neither a successful cross-critique nor a Mesh structural
 record is sufficient to merge a PR, grant credentials, deploy to HF/Cloudflare,
 publish to PyPI, spend GPUs or change the signed-inference P0.
 
+## Ollama cloud-format recovery (bounded and fail closed)
+
+Ollama's documented structured-output `format` enforcement does **not**
+currently apply to cloud-hosted models. A cloud endpoint's textual claim to
+output JSON is not a schema guarantee. This adapter therefore parses and
+checks the returned bytes independently instead of assuming schema support.
+
+The host requests each critic's `finding` as one sentence of 25–160
+characters, while the security gate still admits only the original strict
+JSON keys and length limits. A malformed finding, interrupted completion,
+or syntactically invalid JSON permits **at most one** retry to that **same**
+provider, using the same public peer input and no generated first-failure
+response. A second failure remains `HOLD`.
+
+Unsafe content, model tool calls, duplicate keys, unsupported verdicts,
+extra authority fields, and contradictory votes are **never** retried or
+downgraded. Neither model gets host tools, nor do successful retries create
+independent reviewer authentication. The reply receipt records the number
+of attempts and the eventual model verdict or fixed refusal reason. Synthetic
+tests verify both successful format repair and persistent HOLD.
+
+Official documentation: https://docs.ollama.com/capabilities/structured-outputs
+
 ## Negative and independent checks
 
 ```powershell
