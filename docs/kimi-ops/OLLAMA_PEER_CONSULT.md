@@ -9,7 +9,9 @@ approve PRs, publish artifacts, or authorize releases.
 
 ## Prerequisites
 
-- An Ollama server on `http://127.0.0.1:11434`.
+- An Ollama server on `http://127.0.0.1:11434`. The transport rejects
+  HTTP redirects and ignores ambient HTTP(S) proxy variables. If a gateway
+  requires a redirect to work, treat that as HOLD rather than following it.
 - Working `kimi-k3.1-pro:cloud` and `mistral-large-4:cloud` aliases.
 - An operator-verified **public** repository excerpt and exact 40-character
   GitHub source commit. **No secrets, private code, command lines, or keys.**
@@ -40,6 +42,10 @@ Run deterministic contract tests with
 
 ## Release and privacy boundary
 
+- Loopback smoke tests use synthetic requests and isolated local HTTP servers:
+  a 302 redirect never reaches the second origin, and hostile `HTTP_PROXY`
+  settings never receive the prompt. These tests do not prove a compromised
+  host or Ollama process cannot intercept requests.
 - The caller **must** independently re-read GitHub's head SHA and CI checks
   before any proposed patch is considered. The adapter explicitly marks
   `source_freshness_independently_verified=False`.

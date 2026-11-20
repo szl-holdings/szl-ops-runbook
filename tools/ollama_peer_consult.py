@@ -4,6 +4,7 @@
 Accepts only explicitly public source evidence. Does not execute model output,
 inspect credentials, write files, approve PRs, or claim source freshness.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -30,6 +31,13 @@ class PeerConsultHold(ValueError):
     """The evidence is not admissible for cloud-model consultation."""
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Deny every redirect: a local gateway must answer at its pinned origin."""
+
+    def redirect_request(self, req, fp, code, msg, hdrs, newurl):
+        raise PeerConsultHold("OLLAMA_REDIRECT_REFUSED")
+
+
 def ollama_chat(model: str, prompt: str) -> Mapping[str, Any]:
     """Call a fixed loopback endpoint; do not accept model-supplied URLs or tools."""
     if model not in MODELS:
@@ -43,10 +51,11 @@ def ollama_chat(model: str, prompt: str) -> Mapping[str, Any]:
             "options": {"num_predict": 1800, "temperature": 0},
         }
     ).encode("utf-8")
-    req = urllib.request.Request(
-        ENDPOINT, data=body, headers={"Content-Type": "application/json"}, method="POST"
-    )
-    with urllib.request.urlopen(req, timeout=100) as response:
+    req = urllib.request.Request(ENDPOINT, data=body, headers={"Content-Type": "application/json"}, method="POST")
+    # Never inherit HTTP_PROXY/HTTPS_PROXY and never follow gateway redirects.
+    # Otherwise even a literal loopback URL could dispatch a second request.
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
+    with opener.open(req, timeout=100) as response:
         if response.status != 200:
             raise PeerConsultHold("OLLAMA_HTTP_NON_200")
         raw = response.read(1_048_577)
@@ -100,9 +109,7 @@ def consult_public_peer_review(
                 or not (40 <= len(content) <= 24000)
             ):
                 raise PeerConsultHold("MODEL_RESPONSE_INCOMPLETE")
-            results.append(
-                {"model": model, "state": "REVIEW_TEXT_RECEIVED", "response": content}
-            )
+            results.append({"model": model, "state": "REVIEW_TEXT_RECEIVED", "response": content})
         except Exception as error:
             results.append(
                 {
