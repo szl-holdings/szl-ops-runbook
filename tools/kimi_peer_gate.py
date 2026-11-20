@@ -46,8 +46,16 @@ def assess_peer_proposal(
     content = message.get("content")
     if not isinstance(content, str) or not (2 <= len(content.encode("utf-8")) <= 8192):
         raise PeerProposalHold("MODEL_TEXT_UNAVAILABLE_OR_OVERSIZED")
+    def reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        keys = [key for key, _ in pairs]
+        if len(keys) != len(set(keys)):
+            raise PeerProposalHold("MODEL_JSON_DUPLICATE_KEYS")
+        return dict(pairs)
+
     try:
-        proposal = json.loads(content)
+        proposal = json.loads(content, object_pairs_hook=reject_duplicate_keys)
+    except PeerProposalHold:
+        raise
     except ValueError as exc:
         raise PeerProposalHold("MODEL_JSON_INVALID") from exc
     if not isinstance(proposal, dict) or set(proposal) != FIELDS:

@@ -51,6 +51,18 @@ def test_fail_closed_controls(response, code):
     with pytest.raises(PeerProposalHold, match=code):
         assess(response)
 
+def test_duplicate_model_json_keys_fail_closed_even_if_equal_or_escaped():
+    original = payload()["message"]["content"]
+    for extra in (
+        '"path": "tools/candidate.py"',
+        '"path": "../.env"',
+        r'"\u0070ath": "tools/candidate.py"',
+    ):
+        duplicate = original[:-1] + ", " + extra + "}"
+        with pytest.raises(PeerProposalHold, match="MODEL_JSON_DUPLICATE_KEYS"):
+            assess({"message": {"content": duplicate}})
+
+
 def test_host_sha_must_be_exact():
     with pytest.raises(PeerProposalHold, match="INVALID_HOST_SOURCE_PIN"):
         assess_peer_proposal(payload(), expected_repo=REPO, expected_head_sha="main",
