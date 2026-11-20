@@ -103,20 +103,54 @@ def evaluate_claim(claim: object, *, now: datetime) -> dict[str, Any]:
 
 
 def summarize_claims(claims: object, *, now: datetime) -> dict[str, Any]:
-    """Retain all requested denominators; empty or partial is never healthy."""
+    """Count untrusted input rows, never prove distinct attempts or deliveries.
+
+    A duplicate *positive* row is ambiguous: it could be two real events with
+    identical metrics or one replayed assertion. Surface the risk, do not
+    deduplicate the submitted denominator or promote an observed-success claim.
+    """
+    if not isinstance(now, datetime) or now.tzinfo is None or now.utcoffset() != timedelta(0):
+        raise ValueError("now must be an aware UTC clock")
     if type(claims) is not list or len(claims) > MAX_BATCH:
         raise ValueError("bounded list of at most 256 observations required")
     observations = [evaluate_claim(c, now=now) for c in claims]
     met = sum(1 for c in observations if c["reported_conditions_met"])
     counts: dict[str, int] = {}
-    for c in observations:
-        counts[c["state"]] = counts.get(c["state"], 0) + 1
+    # Values are restricted to finite primitive types by a positive verdict,
+    # so building these tuples cannot serialize arbitrary untrusted objects.
+    positive_shapes: set[tuple] = set()
+    possible_duplicate_positive_rows = 0
+    for row, decision in zip(claims, observations, strict=True):
+        counts[decision["state"]] = counts.get(decision["state"], 0) + 1
+        if decision["reported_conditions_met"]:
+            shape = (
+                row["observed_at_utc"],
+                row["relay_http_status"],
+                row["relay_elapsed_ms"],
+                row["subscriber_elapsed_ms"],
+                row["subscriber_correlation_claim"],
+                row["publish_attempts"],
+                row["automatic_retries"],
+            )
+            if shape in positive_shapes:
+                possible_duplicate_positive_rows += 1
+            else:
+                positive_shapes.add(shape)
+    if not observations:
+        coverage = "UNOBSERVED"
+    elif possible_duplicate_positive_rows:
+        coverage = "POSSIBLE_DUPLICATE_CLAIMS_UNVERIFIED"
+    else:
+        coverage = "REPORTED_UNVERIFIED"
     return {
         "schema": "szl.alert-delivery-window.v1",
-        "coverage": "UNOBSERVED" if not observations else "REPORTED_UNVERIFIED",
+        "coverage": coverage,
+        # Input rows, not independently corroborated unique delivery attempts.
         "claimed_attempts_observed": len(observations),
         "reported_conditions_met": met,
         "reported_conditions_not_met": len(observations) - met,
+        "possible_duplicate_positive_claim_rows": possible_duplicate_positive_rows,
+        "distinct_attempt_identities_verified": False,
         "independently_verified_attempts": 0,
         "independently_verified_delivery_successes": 0,
         "states": dict(sorted(counts.items())),
