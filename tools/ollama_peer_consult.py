@@ -20,6 +20,8 @@ SHA40 = re.compile(r"^[0-9a-f]{40}$")
 SECRET = re.compile(
     r"(?i)(authorization\s*:\s*bearer\s+\S+|"
     r"(?:ghp_|github_pat_|hf_|sk-)[A-Za-z0-9_-]{12,}|"
+    r"AKIA[0-9A-Z]{16}|"
+    r"(?:api[_-]?key|access[_-]?token|secret[_-]?key)\s*[:=]\s*['\"]?[A-Za-z0-9_\/+=-]{12,}|"
     r"-----BEGIN [A-Z ]*PRIVATE KEY-----)"
 )
 
@@ -38,7 +40,7 @@ def ollama_chat(model: str, prompt: str) -> Mapping[str, Any]:
             "messages": [{"role": "user", "content": prompt}],
             "stream": False,
             "think": False,
-            "options": {"num_predict": 850, "temperature": 0},
+            "options": {"num_predict": 1800, "temperature": 0},
         }
     ).encode("utf-8")
     req = urllib.request.Request(
@@ -88,7 +90,7 @@ def consult_public_peer_review(
             if not isinstance(reply, Mapping):
                 raise PeerConsultHold("MODEL_REPLY_INVALID")
             message = reply.get("message")
-            if not isinstance(message, Mapping) or message.get("tool_calls"):
+            if not isinstance(message, Mapping) or "tool_calls" in message or "tool_calls" in reply:
                 raise PeerConsultHold("MODEL_REPLY_OR_TOOL_CALL_REFUSED")
             content = message.get("content")
             if (
@@ -103,7 +105,12 @@ def consult_public_peer_review(
             )
         except Exception as error:
             results.append(
-                {"model": model, "state": "HOLD", "reason_type": type(error).__name__}
+                {
+                    "model": model,
+                    "state": "HOLD",
+                    "reason_type": type(error).__name__,
+                    "reason_code": str(error) if isinstance(error, PeerConsultHold) else "TRANSPORT_ERROR",
+                }
             )
     success = all(item["state"] == "REVIEW_TEXT_RECEIVED" for item in results)
     return {
@@ -114,7 +121,8 @@ def consult_public_peer_review(
         "evidence_sha256": hashlib.sha256(evidence.encode("utf-8")).hexdigest(),
         "decision": "CONSULTED_NOT_EXECUTED" if success else "HOLD",
         "merge_authorized": False,
-        "provider_writes": 0,
+        "provider_write_state": "NOT_MEASURED",
+        "adapter_release_actions": 0,
         "signed_receipt": False,
         "reviews": results,
     }

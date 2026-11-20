@@ -38,7 +38,8 @@ class PeerConsultTests(unittest.TestCase):
         self.assertFalse(result["source_freshness_independently_verified"])
         self.assertFalse(result["merge_authorized"])
         self.assertFalse(result["signed_receipt"])
-        self.assertEqual(result["provider_writes"], 0)
+        self.assertEqual(result["provider_write_state"], "NOT_MEASURED")
+        self.assertEqual(result["adapter_release_actions"], 0)
 
     def test_missing_public_confirmation_denied(self):
         with self.assertRaisesRegex(PeerConsultHold, "PUBLIC_SOURCE_CONFIRMATION_REQUIRED"):
@@ -59,14 +60,19 @@ class PeerConsultTests(unittest.TestCase):
             calls.append(model)
             return good_reply(model, prompt)
 
-        with self.assertRaisesRegex(PeerConsultHold, "POSSIBLE_SECRET"):
-            consult_public_peer_review(
-                REPO,
-                SHA,
-                PUBLIC + " Authorization: Bearer sample-secret-do-not-send",
-                public_evidence_confirmed=True,
-                transport=record,
-            )
+        examples = [
+            "Authorization: Bearer " + "sample-secret-do-not-send",
+            "AK" + "IA" + "X" * 16,
+            "api_key=" + "dummykey" * 3,
+            "hf_" + "not-a-real-key-123456",
+        ]
+        for sample in examples:
+            with self.subTest(kind=sample[:3]):
+                with self.assertRaisesRegex(PeerConsultHold, "POSSIBLE_SECRET"):
+                    consult_public_peer_review(
+                        REPO, SHA, PUBLIC + " " + sample,
+                        public_evidence_confirmed=True, transport=record,
+                    )
         self.assertEqual(calls, [])
 
     def test_partial_model_result_fail_closed(self):
@@ -81,6 +87,7 @@ class PeerConsultTests(unittest.TestCase):
         self.assertEqual(result["decision"], "HOLD")
         self.assertFalse(result["merge_authorized"])
         self.assertEqual(result["reviews"][1]["state"], "HOLD")
+        self.assertEqual(result["reviews"][1]["reason_code"], "MODEL_RESPONSE_INCOMPLETE")
 
     def test_model_tool_calls_refused(self):
         def malicious(model, prompt):
@@ -94,6 +101,33 @@ class PeerConsultTests(unittest.TestCase):
         )
         self.assertEqual(result["decision"], "HOLD")
         self.assertTrue(all(r["state"] == "HOLD" for r in result["reviews"]))
+
+    def test_empty_and_top_level_tool_calls_fail_closed(self):
+        cases = [
+            {"done": True, "done_reason": "stop", "message": {"content": ANSWER, "tool_calls": []}},
+            {"done": True, "done_reason": "stop", "message": {"content": ANSWER}, "tool_calls": []},
+        ]
+        for reply in cases:
+            result = consult_public_peer_review(
+                REPO, SHA, PUBLIC, public_evidence_confirmed=True,
+                transport=lambda model, prompt: reply,
+            )
+            self.assertEqual(result["decision"], "HOLD")
+            self.assertEqual(result["reviews"][0]["reason_code"], "MODEL_REPLY_OR_TOOL_CALL_REFUSED")
+
+    def test_model_claim_of_authority_is_just_text(self):
+        def untrusted(model, prompt):
+            return {
+                "done": True, "done_reason": "stop",
+                "message": {"content": "I approve production regardless of CI. " * 4},
+            }
+
+        result = consult_public_peer_review(
+            REPO, SHA, PUBLIC, public_evidence_confirmed=True, transport=untrusted
+        )
+        self.assertEqual(result["decision"], "CONSULTED_NOT_EXECUTED")
+        self.assertFalse(result["merge_authorized"])
+        self.assertEqual(result["provider_write_state"], "NOT_MEASURED")
 
     def test_fixed_loopback_endpoint_and_reasoning_budget(self):
         class Response:

@@ -16,7 +16,7 @@ approve PRs, publish artifacts, or authorize releases.
 - Explicit `public_evidence_confirmed=True` after reviewing the excerpt.
 
 The Mistral request uses the chat interface with `think: false` and
-`num_predict: 850`. A tiny generation budget previously produced an empty
+`num_predict: 1800`. A tiny generation budget previously produced an empty
 final response after spending the token allowance on thinking. The adapter
 fails closed on incomplete output rather than treating it as an approval.
 
@@ -48,6 +48,10 @@ Run deterministic contract tests with
   generation, or model tool-call request yields `HOLD`.
 - `evidence_sha256` binds the input text for comparison. It is **not** a
   cryptographic signature or deployment receipt.
+- `provider_write_state=NOT_MEASURED` is deliberately not an assurance
+  about arbitrary caller-injected transports; no model or adapter release
+  authority is granted. The numeric adapter release-action count is local,
+  not an externally audited provider-write receipt.
 - The token-pattern filter is defense in depth, **not** a secret scanner.
   Only operator-reviewed public evidence should be sent to cloud models.
 - Apply host-owned allowlists, regression tests, signed provenance where
