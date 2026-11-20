@@ -192,8 +192,64 @@ class DeliveryWitnessTests(unittest.TestCase):
     def test_all_reported_good_still_unverified(self):
         result = summarize_claims([claim(), claim()], now=NOW)
         self.assertEqual(result["reported_conditions_met"], 2)
-        self.assertEqual(result["coverage"], "REPORTED_UNVERIFIED")
+        self.assertEqual(result["coverage"], "POSSIBLE_DUPLICATE_CLAIMS_UNVERIFIED")
+        self.assertEqual(result["possible_duplicate_positive_claim_rows"], 1)
+        self.assertFalse(result["distinct_attempt_identities_verified"])
         self.assertFalse(result["slo_attested"])
+
+    def test_distinct_positive_shapes_are_not_proven_distinct_alerts(self):
+        second = claim()
+        second["relay_elapsed_ms"] += 1
+        result = summarize_claims([claim(), second], now=NOW)
+        self.assertEqual(result["claimed_attempts_observed"], 2)
+        self.assertEqual(result["reported_conditions_met"], 2)
+        self.assertEqual(result["possible_duplicate_positive_claim_rows"], 0)
+        self.assertEqual(result["coverage"], "REPORTED_UNVERIFIED")
+        self.assertFalse(result["distinct_attempt_identities_verified"])
+        self.assertFalse(result["production_ready"])
+
+    def test_three_identical_positive_rows_flag_two_possible_replays(self):
+        result = summarize_claims([claim(), claim(), claim()], now=NOW)
+        self.assertEqual(result["claimed_attempts_observed"], 3)
+        self.assertEqual(result["reported_conditions_met"], 3)
+        self.assertEqual(result["possible_duplicate_positive_claim_rows"], 2)
+        self.assertEqual(result["independently_verified_delivery_successes"], 0)
+        self.assertFalse(result["slo_attested"])
+
+    def test_mixed_invalid_and_repeat_rows_keep_full_denominator(self):
+        malformed = claim()
+        malformed["release_authorized"] = True
+        result = summarize_claims([claim(), claim(), malformed], now=NOW)
+        self.assertEqual(result["claimed_attempts_observed"], 3)
+        self.assertEqual(result["reported_conditions_met"], 2)
+        self.assertEqual(result["reported_conditions_not_met"], 1)
+        self.assertEqual(result["possible_duplicate_positive_claim_rows"], 1)
+        self.assertEqual(result["states"]["INVALID_CLAIM"], 1)
+        self.assertFalse(result["release_authorized"])
+
+    def test_repeated_provider_429_is_not_misclassified_as_delivery(self):
+        rate_limited = claim()
+        rate_limited["relay_http_status"] = 429
+        result = summarize_claims([rate_limited, deepcopy(rate_limited)], now=NOW)
+        self.assertEqual(result["claimed_attempts_observed"], 2)
+        self.assertEqual(result["reported_conditions_met"], 0)
+        self.assertEqual(result["states"]["RATE_LIMITED_NO_RETRY"], 2)
+        self.assertEqual(result["possible_duplicate_positive_claim_rows"], 0)
+        self.assertFalse(result["production_ready"])
+
+    def test_empty_batch_rejects_naive_or_invalid_clock(self):
+        for invalid in (None, False, datetime(2026, 11, 20, 6, 10)):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                summarize_claims([], now=invalid)
+
+    def test_malformed_unhashable_row_never_crashes_positive_diagnostic(self):
+        malformed = claim()
+        malformed["relay_elapsed_ms"] = {"untrusted": ["large", "nested"]}
+        result = summarize_claims([malformed], now=NOW)
+        self.assertEqual(result["claimed_attempts_observed"], 1)
+        self.assertEqual(result["states"]["INVALID_RELAY_LATENCY"], 1)
+        self.assertEqual(result["possible_duplicate_positive_claim_rows"], 0)
+        self.assertFalse(result["production_ready"])
 
     def test_batch_size_bounded(self):
         with self.assertRaises(ValueError):
