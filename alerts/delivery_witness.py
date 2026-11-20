@@ -16,11 +16,18 @@ MAX_BATCH = 256
 MAX_AGE = timedelta(days=30)
 MAX_FUTURE_SKEW = timedelta(minutes=5)
 SCHEMA = "szl.alert-delivery-claim.v1"
-FIELDS = frozenset({
-    "schema", "observed_at_utc", "relay_http_status",
-    "relay_elapsed_ms", "subscriber_elapsed_ms", "subscriber_correlation_claim",
-    "publish_attempts", "automatic_retries",
-})
+FIELDS = frozenset(
+    {
+        "schema",
+        "observed_at_utc",
+        "relay_http_status",
+        "relay_elapsed_ms",
+        "subscriber_elapsed_ms",
+        "subscriber_correlation_claim",
+        "publish_attempts",
+        "automatic_retries",
+    }
+)
 
 
 def _time(value: object) -> datetime | None:
