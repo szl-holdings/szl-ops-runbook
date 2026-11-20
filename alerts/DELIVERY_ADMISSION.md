@@ -14,7 +14,9 @@ The earlier [PR #3570](https://github.com/szl-holdings/a11oy/pull/3570) was clos
 
 The new alerts/delivery_witness.py consumes only caller-declared, exact-shape samples. It separates 429 RATE_LIMITED_NO_RETRY; 504 UNKNOWN_DELIVERY_NO_RETRY; 502/5xx upstream failures; missing or uncorrelated subscriber receipt; five-second ACK breaches; and sixty-second subscriber breaches.
 
-Zero samples remain UNOBSERVED rather than counted as a success. Mixed samples retain the denominator and report the number that satisfy **reported** conditions. Even a fully coherent caller declaration is REPORTED_CONDITIONS_MET_NOT_VERIFIED: all independent signature, real subscriber verification, production readiness, release and automatic-retry authorizations stay FALSE. Neither the origin nor integrity of a claimed receipt is verified.
+Zero samples remain UNOBSERVED rather than counted as a success. Mixed samples retain the **input-row** denominator and report the number that satisfy **reported** conditions. There is no trusted per-alert identity in the v1 claim, so `claimed_attempts_observed` counts received rows, **not proven unique attempts**. Repeated, byte-equivalent positive evidence is labeled `POSSIBLE_DUPLICATE_CLAIMS_UNVERIFIED` and counted in `possible_duplicate_positive_claim_rows`. This does **not** establish replay or duplication of real deliveries: independent alerts can legitimately share the same reported metrics. Conversely, distinct rows do not prove distinct attempts. No alert identity or payload content is emitted in the summary. Every batch retains `distinct_attempt_identities_verified=false`.
+
+Even a fully coherent caller declaration is REPORTED_CONDITIONS_MET_NOT_VERIFIED: all independent signature, real subscriber verification, production readiness, release and automatic-retry authorizations stay FALSE. Neither the origin nor integrity of a claimed receipt is verified. A new genuinely verified receipt workflow would need independent correlation IDs, a stable trusted time source, signature checks and actual subscriber-side evidence rather than inferring uniqueness from these untrusted rows.
 
 Run from repository root:
 
