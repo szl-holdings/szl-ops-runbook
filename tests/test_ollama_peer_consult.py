@@ -279,6 +279,16 @@ class PeerConsultTests(unittest.TestCase):
             for thread in threads:
                 thread.join(timeout=2)
 
+    def test_aborted_loopback_connection_fails_closed(self):
+        class AbortedOpener:
+            def open(self, request, timeout):
+                raise ConnectionAbortedError("synthetic loopback reset")
+
+        with patch("ollama_peer_consult.urllib.request.build_opener",
+                   return_value=AbortedOpener()):
+            with self.assertRaisesRegex(PeerConsultHold, "OLLAMA_TRANSPORT_UNAVAILABLE"):
+                ollama_chat(MODELS[0], "Public synthetic source")
+
     def test_model_allowlist_denied(self):
         with self.assertRaisesRegex(PeerConsultHold, "MODEL_NOT_ALLOWED"):
             ollama_chat("unapproved-model:cloud", "Public source review")
