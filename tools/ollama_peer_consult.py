@@ -55,10 +55,15 @@ def ollama_chat(model: str, prompt: str) -> Mapping[str, Any]:
     # Never inherit HTTP_PROXY/HTTPS_PROXY and never follow gateway redirects.
     # Otherwise even a literal loopback URL could dispatch a second request.
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
-    with opener.open(req, timeout=100) as response:
-        if response.status != 200:
-            raise PeerConsultHold("OLLAMA_HTTP_NON_200")
-        raw = response.read(1_048_577)
+    try:
+        with opener.open(req, timeout=100) as response:
+            if response.status != 200:
+                raise PeerConsultHold("OLLAMA_HTTP_NON_200")
+            raw = response.read(1_048_577)
+    except OSError:
+        # Windows loopback aborts can escape urllib as ConnectionAbortedError.
+        # Refuse rather than treating a transport failure as advice.
+        raise PeerConsultHold("OLLAMA_TRANSPORT_UNAVAILABLE") from None
     if len(raw) > 1_048_576:
         raise PeerConsultHold("OLLAMA_RESPONSE_TOO_LARGE")
     payload = json.loads(raw)
