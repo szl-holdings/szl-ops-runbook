@@ -52,6 +52,21 @@ def _nonfinite_json_constant(_: str) -> float:
     raise PeerConsultHold("OLLAMA_NONFINITE_NUMBER")
 
 
+def _reject_unpaired_surrogates(value: Any) -> None:
+    """Refuse Unicode code-unit fragments that cannot be UTF-8 receipt-bound."""
+    pending = [value]
+    while pending:
+        item = pending.pop()
+        if isinstance(item, str):
+            if any(0xD800 <= ord(char) <= 0xDFFF for char in item):
+                raise PeerConsultHold("OLLAMA_UNPAIRED_SURROGATE")
+        elif isinstance(item, dict):
+            pending.extend(item.keys())
+            pending.extend(item.values())
+        elif isinstance(item, list):
+            pending.extend(item)
+
+
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
     """Deny every redirect: a local gateway must answer at its pinned origin."""
 
@@ -100,6 +115,7 @@ def ollama_chat(model: str, prompt: str) -> Mapping[str, Any]:
         raise PeerConsultHold("OLLAMA_INVALID_JSON") from None
     if not isinstance(payload, dict):
         raise PeerConsultHold("OLLAMA_RESPONSE_NOT_OBJECT")
+    _reject_unpaired_surrogates(payload)
     return payload
 
 
