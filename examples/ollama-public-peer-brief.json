@@ -1,0 +1,9 @@
+{
+  "schema": "szl.public-peer-brief/v1",
+  "repo": "szl-holdings/szl-ops-runbook",
+  "head": "8d7e0fb94fb5da0b6efa845970ec5414f7bb33ae",
+  "draft": true,
+  "body_hold": "DRAFT / HOLD / DO NOT MERGE",
+  "source_change": "Public source-only Ollama adapter rejects duplicate JSON keys, malformed payloads, nonfinite JSON numbers and unpaired Unicode before peer receipt hashing.",
+  "public_source_confirmed": true
+}

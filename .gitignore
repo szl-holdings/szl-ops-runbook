@@ -1,3 +1,4 @@
 board/*.json
 __pycache__/
 *.pyc
+.szl-local-receipts/
