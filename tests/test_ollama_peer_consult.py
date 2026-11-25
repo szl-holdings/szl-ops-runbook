@@ -290,6 +290,88 @@ class PeerConsultTests(unittest.TestCase):
             with self.assertRaisesRegex(PeerConsultHold, "OLLAMA_TRANSPORT_UNAVAILABLE"):
                 ollama_chat(MODELS[0], "Public synthetic source")
 
+    def test_gateway_json_requires_unique_keys_and_finite_numbers(self):
+        """Ambiguous gateway JSON cannot become a valid peer-review receipt."""
+        class Response:
+            status = 200
+
+            def __init__(self, raw):
+                self.raw = raw
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return None
+
+            def read(self, amount):
+                return self.raw
+
+        class Opener:
+            def __init__(self, raw):
+                self.raw = raw
+
+            def open(self, request, timeout):
+                return Response(self.raw)
+
+        bad_responses = [
+            (b'{"done":true,"done":true,"done_reason":"stop","message":{"content":"okay"}}',
+             "OLLAMA_DUPLICATE_JSON_KEY"),
+            (b'{"done":true,"done_reason":"stop","message":{"content":"okay","content":"forged"}}',
+             "OLLAMA_DUPLICATE_JSON_KEY"),
+            (b'{"done":true,"done_reason":"stop","eval_count":NaN,"message":{"content":"okay"}}',
+             "OLLAMA_NONFINITE_NUMBER"),
+            (b'{"done":true,"done_reason":"stop","eval_count":1e9999,"message":{"content":"okay"}}',
+             "OLLAMA_NONFINITE_NUMBER"),
+            (b'{"done":true,,}', "OLLAMA_INVALID_JSON"),
+        ]
+        for raw, expected in bad_responses:
+            with self.subTest(raw=raw[:70]):
+                with patch("ollama_peer_consult.urllib.request.build_opener",
+                           return_value=Opener(raw)):
+                    with self.assertRaisesRegex(PeerConsultHold, expected):
+                        ollama_chat(MODELS[0], "Public source fixture")
+
+    def test_unpaired_unicode_in_gateway_response_fails_closed(self):
+        """A JSON-escaped lone surrogate must not reach UTF-8 receipt hashing."""
+        class Response:
+            status = 200
+
+            def __init__(self, raw):
+                self.raw = raw
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return None
+
+            def read(self, size):
+                return self.raw
+
+        class Opener:
+            def __init__(self, raw):
+                self.raw = raw
+
+            def open(self, request, timeout):
+                return Response(self.raw)
+
+        for body in (
+            b'{"done":true,"done_reason":"stop","message":{"content":"Review: \\ud800 invalid."}}',
+            b'{"done":true,"done_reason":"stop","message":{"content":"Review: \\udc00 invalid."}}',
+            b'{"done":true,"done_reason":"stop","metadata":{"note":"\\ud800"}}',
+        ):
+            with self.subTest(body=body[:64]):
+                with patch("ollama_peer_consult.urllib.request.build_opener",
+                           return_value=Opener(body)):
+                    with self.assertRaisesRegex(PeerConsultHold, "OLLAMA_UNPAIRED_SURROGATE"):
+                        ollama_chat(MODELS[0], "Public synthetic source")
+
+        valid = b'{"done":true,"done_reason":"stop","message":{"content":"Review: \\ud83d\\ude00 valid."}}'
+        with patch("ollama_peer_consult.urllib.request.build_opener",
+                   return_value=Opener(valid)):
+            self.assertIn("😀", ollama_chat(MODELS[0], "Public synthetic source")["message"]["content"])
+
     def test_model_allowlist_denied(self):
         with self.assertRaisesRegex(PeerConsultHold, "MODEL_NOT_ALLOWED"):
             ollama_chat("unapproved-model:cloud", "Public source review")

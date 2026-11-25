@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import re
 import urllib.request
 from collections.abc import Callable, Mapping
@@ -32,6 +33,41 @@ SECRET = re.compile(
 
 class PeerConsultHold(ValueError):
     """The evidence is not admissible for cloud-model consultation."""
+
+
+def _unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise PeerConsultHold("OLLAMA_DUPLICATE_JSON_KEY")
+        result[key] = value
+    return result
+
+
+def _finite_json_number(value: str) -> float:
+    parsed = float(value)
+    if not math.isfinite(parsed):
+        raise PeerConsultHold("OLLAMA_NONFINITE_NUMBER")
+    return parsed
+
+
+def _nonfinite_json_constant(_: str) -> float:
+    raise PeerConsultHold("OLLAMA_NONFINITE_NUMBER")
+
+
+def _reject_unpaired_surrogates(value: Any) -> None:
+    """Refuse Unicode code-unit fragments that cannot be UTF-8 receipt-bound."""
+    pending = [value]
+    while pending:
+        item = pending.pop()
+        if isinstance(item, str):
+            if any(0xD800 <= ord(char) <= 0xDFFF for char in item):
+                raise PeerConsultHold("OLLAMA_UNPAIRED_SURROGATE")
+        elif isinstance(item, dict):
+            pending.extend(item.keys())
+            pending.extend(item.values())
+        elif isinstance(item, list):
+            pending.extend(item)
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -69,9 +105,20 @@ def ollama_chat(model: str, prompt: str) -> Mapping[str, Any]:
         raise PeerConsultHold("OLLAMA_TRANSPORT_UNAVAILABLE") from None
     if len(raw) > 1_048_576:
         raise PeerConsultHold("OLLAMA_RESPONSE_TOO_LARGE")
-    payload = json.loads(raw)
+    try:
+        payload = json.loads(
+            raw,
+            object_pairs_hook=_unique_json_object,
+            parse_float=_finite_json_number,
+            parse_constant=_nonfinite_json_constant,
+        )
+    except PeerConsultHold:
+        raise
+    except (TypeError, ValueError, UnicodeError, RecursionError):
+        raise PeerConsultHold("OLLAMA_INVALID_JSON") from None
     if not isinstance(payload, dict):
         raise PeerConsultHold("OLLAMA_RESPONSE_NOT_OBJECT")
+    _reject_unpaired_surrogates(payload)
     return payload
 
 
