@@ -17,6 +17,7 @@ from ollama_peer_consult import (  # noqa: E402
     ENDPOINT,
     MODELS,
     PeerConsultHold,
+    REPLY_WORD_BUDGET,
     consult_public_peer_review,
     ollama_chat,
 )
@@ -292,6 +293,25 @@ class PeerConsultTests(unittest.TestCase):
     def test_model_allowlist_denied(self):
         with self.assertRaisesRegex(PeerConsultHold, "MODEL_NOT_ALLOWED"):
             ollama_chat("unapproved-model:cloud", "Public source review")
+
+
+class ReplyBudgetTests(unittest.TestCase):
+    def test_prompt_states_a_word_budget_the_token_cap_can_hold(self):
+        """A reply cut off at num_predict is refused, so the prompt must bound its length."""
+        seen = []
+
+        def transport(model, prompt):
+            seen.append(prompt)
+            return good_reply(model, prompt)
+
+        result = consult_public_peer_review(
+            REPO, SHA, PUBLIC, public_evidence_confirmed=True, transport=transport)
+        self.assertEqual(result["decision"], "CONSULTED_NOT_EXECUTED")
+        self.assertEqual(len(seen), len(MODELS))
+        for prompt in seen:
+            self.assertIn(f"under {REPLY_WORD_BUDGET} words", prompt)
+        # The 1800-token cap must hold the budget at well over one token per word.
+        self.assertLessEqual(REPLY_WORD_BUDGET * 4, 1800)
 
 
 if __name__ == "__main__":
