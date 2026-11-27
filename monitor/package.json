@@ -1,0 +1,1 @@
+{"name":"szl-outside-monitor","private":true,"type":"module","scripts":{"test":"node --test test/"}}

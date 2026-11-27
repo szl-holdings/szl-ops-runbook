@@ -1,0 +1,19 @@
+{
+  // Deploy: npx wrangler deploy --config wrangler.jsonc   (rollback: see README.md)
+  "name": "szl-outside-monitor",
+  "main": "src/index.mjs",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": false,
+  "triggers": { "crons": ["*/5 * * * *", "30 12 * * *"] },
+  "vars": {
+    "MONITOR_FROM": "monitor@a11oy.net",
+    "MONITOR_TO": "stephenlutar2@gmail.com",
+    "HEARTBEAT_CRON": "30 12 * * *"
+  },
+  // destination_address pins the binding to one already-verified Email Routing destination.
+  "send_email": [{ "name": "ALERT_EMAIL", "destination_address": "stephenlutar2@gmail.com" }],
+  // KV holds only the last UP/DOWN map so emails go out on state change, not every 5 minutes.
+  // Create once: npx wrangler kv namespace create szl-outside-monitor-state, then paste the id here.
+  "kv_namespaces": [{ "binding": "STATE", "id": "REPLACE_WITH_KV_NAMESPACE_ID" }],
+  "observability": { "enabled": true }
+}

@@ -1,0 +1,48 @@
+# Outside probe: one light GET per public A11oy surface every 5 minutes. No secrets.
+# A down target fails the run; GitHub's own failed-workflow notification goes to the
+# account that owns this schedule. It opens no issues and @-mentions nobody.
+# Rollback: disable this workflow (gh workflow disable outside-probe.yml) or revert the PR.
+name: Outside probe (5 min)
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: outside-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Probe public surfaces (one GET each)
+        shell: bash
+        run: |
+          set -u
+          # name|url|accepted HTTP codes (space separated)
+          targets=(
+            "inference|https://inference.a-11-oy.com/v1/models|200 401 402"
+            "mcp|https://mcp.a-11-oy.com/healthz|200"
+            "a11oy-apex|https://a-11-oy.com/healthz|200"
+            "a11oy-net|https://a11oy.net/|200"
+          )
+          down=0
+          {
+            echo "| target | code | seconds | result |"
+            echo "|---|---|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+          for t in "${targets[@]}"; do
+            IFS='|' read -r name url ok <<< "$t"
+            out=$(curl -s -o /dev/null -m 15 -A "szl-readiness outside-probe/1.0" -w '%{http_code} %{time_total}' "$url" || echo "000 15")
+            code=${out%% *}; secs=${out##* }
+            if [[ " $ok " == *" $code "* ]]; then res=UP; else res=DOWN; down=$((down+1)); echo "::error title=$name DOWN::$url returned $code"; fi
+            echo "| $name | $code | $secs | $res |" >> "$GITHUB_STEP_SUMMARY"
+          done
+          echo "down=$down"
+          [ "$down" -eq 0 ]
