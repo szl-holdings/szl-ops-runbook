@@ -39,8 +39,9 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
           for t in "${targets[@]}"; do
             IFS='|' read -r name url ok <<< "$t"
-            out=$(curl -s -o /dev/null -m 15 -A "szl-readiness outside-probe/1.0" -w '%{http_code} %{time_total}' "$url" || echo "000 15")
+            out=$(curl -s -o /dev/null -m 15 -A "szl-readiness outside-probe/1.0" -w '%{http_code} %{time_total}' "$url") || true
             code=${out%% *}; secs=${out##* }
+            [ -n "$code" ] || code=000
             if [[ " $ok " == *" $code "* ]]; then res=UP; else res=DOWN; down=$((down+1)); echo "::error title=$name DOWN::$url returned $code"; fi
             echo "| $name | $code | $secs | $res |" >> "$GITHUB_STEP_SUMMARY"
           done

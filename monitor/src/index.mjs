@@ -74,20 +74,24 @@ async function send(env, subject, text) {
 
 export async function run(env, { heartbeat = false, fetchImpl = fetch, sendImpl = send } = {}) {
   const results = await Promise.all(TARGETS.map((t) => probe(t, fetchImpl)));
+  const down = results.filter((r) => !r.up);
+  const body = summarize(results) + "\n\nRunbook: szl-ops-runbook monitor/README.md. TEST label appears only on manual tests.";
+  if (heartbeat) {
+    // The heartbeat cron overlaps the 5-minute cron at 12:30 UTC; it only reports and never
+    // touches the UP/DOWN state, so the two runs cannot race on KV.
+    await sendImpl(env, `[SZL monitor] daily heartbeat: ${down.length ? down.length + " down" : "all up"}`, body);
+    return { results, changed: [], heartbeat };
+  }
   const prevRaw = env.STATE ? await env.STATE.get("last") : null;
   const prev = prevRaw ? JSON.parse(prevRaw) : null;
   const changed = transitions(prev, results);
   const next = Object.fromEntries(results.map((r) => [r.name, r.up]));
-  if (env.STATE && JSON.stringify(next) !== prevRaw) await env.STATE.put("last", JSON.stringify(next));
-  const down = results.filter((r) => !r.up);
-  const body = summarize(results) + "\n\nRunbook: szl-ops-runbook monitor/README.md. TEST label appears only on manual tests.";
   if (changed.length) {
     const verb = changed.map((r) => `${r.name} ${r.up ? "RECOVERED" : "DOWN"}`).join(", ");
+    // Send first; if sending throws, state is not saved and the next run retries the alert.
     await sendImpl(env, `[SZL monitor] ${verb}`, body);
   }
-  if (heartbeat) {
-    await sendImpl(env, `[SZL monitor] daily heartbeat: ${down.length ? down.length + " down" : "all up"}`, body);
-  }
+  if (env.STATE && JSON.stringify(next) !== prevRaw) await env.STATE.put("last", JSON.stringify(next));
   return { results, changed: changed.map((r) => r.name), heartbeat };
 }
 

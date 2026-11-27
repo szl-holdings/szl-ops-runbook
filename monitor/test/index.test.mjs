@@ -40,3 +40,12 @@ test("run sends a DOWN email once, then nothing while unchanged, then a heartbea
   assert.equal(sent.length, 2);
   assert.match(sent[0], /mcp DOWN/); assert.match(sent[1], /heartbeat: 1 down/);
 });
+test("a failed alert send does not save state, so the next run retries the alert", async () => {
+  const env = { STATE: kv() }; const sent = []; let fail = true;
+  const sendImpl = async (_e, s) => { if (fail) throw new Error("send failed"); sent.push(s); };
+  const f = fakeFetch({ [url("mcp")]: 530 });
+  await assert.rejects(run(env, { fetchImpl: f, sendImpl }));
+  fail = false;
+  await run(env, { fetchImpl: f, sendImpl });
+  assert.equal(sent.length, 1); assert.match(sent[0], /mcp DOWN/);
+});
